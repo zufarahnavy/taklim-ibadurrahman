@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Majelis Taklim Ibadurrahman</title>
+  <meta name="description" content="Majelis Taklim Ibadurrahman — daftar, isi kehadiran kajian, pantau progres, dan raih Grand Prize.">
+  <meta name="theme-color" content="#FAF7F0">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://script.google.com" crossorigin>
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+  <link rel="preload" href="assets/fonts/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    /* Tema diterapkan sebelum cat pertama → tanpa kedipan */
+    try { var t = localStorage.getItem('sim:theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="css/app.css">
+  <style>body[data-route=admin] .pub-chrome{display:none!important}</style>
+</head>
+<body class="min-h-dvh">
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] btn btn-primary">Lewati ke konten</a>
+
+  <!-- ===== Header (melayang, kaca) ===== -->
+  <header class="pub-chrome fixed top-3 sm:top-4 inset-x-0 z-50 px-3 sm:px-5 pointer-events-none">
+    <div class="glass-2 pointer-events-auto mx-auto max-w-page rounded-full flex items-center justify-between gap-3 pl-4 pr-2 h-14 sm:h-16">
+      <a href="#/home" class="flex items-center gap-2.5 min-w-0" aria-label="Majelis Taklim Ibadurrahman — beranda">
+        <span class="w-9 h-9 rounded-full bg-brand text-gold flex items-center justify-center shrink-0"><svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 4.6L19.5 5l-1.6 5L22 12l-4.1 2 1.6 5-5.1-1.6L12 22l-2.4-4.6L4.5 19l1.6-5L2 12l4.1-2-1.6-5 5.1 1.6z" fill="currentColor"/></svg></span>
+        <span class="font-display font-semibold text-heading text-base sm:text-lg leading-tight truncate" id="brand-name">Majelis Taklim Ibadurrahman</span>
+      </a>
+      <nav class="hidden lg:flex items-center gap-1" aria-label="Navigasi utama" id="nav-desktop"></nav>
+      <div class="flex items-center gap-1.5">
+        <button class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Ganti tema"><span data-theme-icon></span></button>
+        <button class="btn btn-gold hidden sm:inline-flex" data-act="absen">Isi Kehadiran</button>
+        <button class="btn btn-primary hidden sm:inline-flex" data-act="daftar">Daftar</button>
+        <button class="btn btn-ghost btn-icon lg:hidden" id="btn-menu" aria-label="Buka menu" aria-expanded="false" aria-controls="drawer" data-act="menu"><span data-ic="menu"></span></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Laci menu (mobile) ===== -->
+  <div id="drawer" class="pub-chrome fixed inset-0 z-[90]" hidden>
+    <div class="absolute inset-0 bg-emerald-night/60" data-act="menu-close"></div>
+    <aside class="drawer-panel glass-2 flex flex-col p-5 gap-2" style="background:rgb(var(--c-surface))" aria-label="Menu">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-display text-lg font-semibold text-heading">Menu</span>
+        <button class="btn btn-ghost btn-icon" data-act="menu-close" aria-label="Tutup menu"><span data-ic="x"></span></button>
+      </div>
+      <nav class="flex flex-col gap-1" id="nav-drawer" aria-label="Navigasi seluler"></nav>
+      <div class="mt-auto flex flex-col gap-2 pt-4 border-t border-line">
+        <button class="btn btn-gold" data-act="absen">Isi Kehadiran</button>
+        <button class="btn btn-primary" data-act="daftar">Daftar Peserta</button>
+        <button class="btn btn-ghost" data-theme-toggle><span data-theme-icon></span> Ganti tema</button>
+      </div>
+    </aside>
+  </div>
+
+  <div id="cfg-warning" class="hidden fixed top-24 inset-x-4 z-40 max-w-xl mx-auto rounded-2xl border border-gold bg-gold-pale text-gold-ink px-4 py-3 text-sm" role="alert">
+    <strong>Server belum terhubung.</strong> Isi <code>GAS_URL</code> pada <code>js/config.js</code> dengan URL Web App Anda (lihat PANDUAN-INSTALASI.md).
+  </div>
+
+  <!-- ===== Konten ===== -->
+  <main id="main" tabindex="-1" class="outline-none">
+
+    <!-- HOME -->
+    <section class="page" data-page="home" aria-labelledby="h-home">
+      <div class="hero-bg relative overflow-hidden text-white">
+        <div class="star-pattern absolute inset-0 opacity-70" aria-hidden="true"></div>
+        <div class="relative mx-auto max-w-page px-5 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-20 lg:pb-28 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <span class="inline-flex items-center gap-2 rounded-full border border-gold/50 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase text-[#ffdf96]"><span data-ic="sparkles"></span> Sistem Informasi Majelis</span>
+            <h1 id="h-home" class="h-display !text-white mt-6" data-bind="hero-title">Majelis Taklim Ibadurrahman</h1>
+            <p class="mt-5 text-lg text-white/80 max-w-xl" data-bind="hero-sub">Ruang belajar, bersilaturahmi, dan bertumbuh bersama dalam cahaya ilmu. Daftar, hadiri kajian, dan raih keberkahan.</p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <button class="btn btn-solid-gold" style="min-height:52px;padding:0 1.75rem;font-size:15px" data-act="daftar">Daftar Sekarang <span data-ic="arrow-right"></span></button>
+              <button class="btn border-white/40 text-white hover:bg-white/10" style="min-height:52px;padding:0 1.75rem;font-size:15px" data-act="absen"><span data-ic="circle-check"></span> Isi Kehadiran</button>
+            </div>
+            <p class="mt-6 flex items-center gap-2 text-sm text-white/70"><span data-ic="shield-check"></span> Data Anda aman — nomor HP tidak ditampilkan ke publik.</p>
+          </div>
+          <!-- Cuplikan dasbor -->
+          <div class="glass rounded-3xl p-6 sm:p-7 text-white" style="background:rgba(255,255,255,.08);border-color:rgba(205,164,52,.35)" aria-label="Ringkasan majelis">
+            <div class="flex items-center justify-between">
+              <div><p class="text-xs uppercase tracking-widest text-[#ffdf96] font-semibold">Ringkasan</p><p class="font-display text-2xl mt-1 !text-white">Kehadiran Jamaah</p></div>
+              <div class="ring-progress w-20 h-20 rounded-full p-1.5" id="hero-ring" style="--p:0"><div class="w-full h-full rounded-full bg-emerald-night flex items-center justify-center font-display text-xl font-semibold" id="hero-ring-n">0%</div></div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mt-6 text-center">
+              <div class="rounded-2xl bg-white/10 py-4"><div class="font-display text-2xl font-semibold" id="st-peserta">–</div><div class="text-xs text-white/70 mt-1">Peserta</div></div>
+              <div class="rounded-2xl bg-white/10 py-4"><div class="font-display text-2xl font-semibold" id="st-kegiatan">–</div><div class="text-xs text-white/70 mt-1">Kegiatan</div></div>
+              <div class="rounded-2xl bg-white/10 py-4"><div class="font-display text-2xl font-semibold" id="st-hadir">–</div><div class="text-xs text-white/70 mt-1">Kehadiran</div></div>
+            </div>
+            <div class="mt-5 rounded-2xl bg-white/10 p-4 flex items-center gap-4" id="hero-next">
+              <div class="skeleton h-12 w-12 !rounded-2xl"></div><div class="flex-1 space-y-2"><div class="skeleton h-4 w-3/4"></div><div class="skeleton h-3 w-1/2"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="home-body" class="mx-auto max-w-page px-5 sm:px-8 lg:px-12 py-16 space-y-20"></div>
+    </section>
+
+    <section class="page" data-page="about" aria-labelledby="h-about"><div class="mx-auto max-w-page px-5 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-20" id="about-body"></div></section>
+    <section class="page" data-page="event" aria-labelledby="h-event"><div class="mx-auto max-w-page px-5 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-20" id="event-body"></div></section>
+    <section class="page" data-page="news" aria-labelledby="h-news"><div class="mx-auto max-w-page px-5 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-20" id="news-body"></div></section>
+    <section class="page" data-page="narasumber" aria-labelledby="h-nara"><div class="mx-auto max-w-page px-5 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-20" id="nara-body"></div></section>
+    <section class="page" data-page="dashboard" aria-labelledby="h-dash"><div class="mx-auto max-w-page px-5 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-20" id="dash-body"></div></section>
+    <section class="page" data-page="admin" aria-label="Panel Superadmin"><div id="admin-root"></div></section>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="pub-chrome border-t border-line bg-surface-2 pb-28 lg:pb-10">
+    <div class="mx-auto max-w-page px-5 sm:px-8 lg:px-12 py-12 grid md:grid-cols-3 gap-10">
+      <div>
+        <div class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-full bg-brand text-gold flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 4.6L19.5 5l-1.6 5L22 12l-4.1 2 1.6 5-5.1-1.6L12 22l-2.4-4.6L4.5 19l1.6-5L2 12l4.1-2-1.6-5 5.1 1.6z" fill="currentColor"/></svg></span><span class="font-display font-semibold text-heading text-lg" data-bind="org-name">Majelis Taklim Ibadurrahman</span></div>
+        <p class="text-sm text-muted mt-4 max-w-xs" data-bind="tagline">Menuntut ilmu, merajut ukhuwah.</p>
+      </div>
+      <nav aria-label="Tautan footer"><p class="eyebrow mb-3">Jelajahi</p><ul class="grid grid-cols-2 gap-2 text-sm" id="nav-footer"></ul></nav>
+      <div><p class="eyebrow mb-3">Alamat</p><p class="text-sm text-muted" data-bind="alamat">Sidoarjo, Jawa Timur</p>
+        <a href="#/admin" class="inline-flex items-center gap-2 text-sm font-medium text-heading mt-5 hover:underline"><span data-ic="lock"></span> Masuk Pengurus</a></div>
+    </div>
+    <div class="border-t border-line py-4 text-center text-xs text-muted">© <span id="yr"></span> <span data-bind="org-name">Majelis Taklim Ibadurrahman</span>. Seluruh hak dilindungi.</div>
+  </footer>
+
+  <!-- ===== Navigasi bawah (mobile) ===== -->
+  <nav class="pub-chrome lg:hidden fixed bottom-3 inset-x-3 z-50 pb-safe" aria-label="Aksi cepat">
+    <div class="glass-2 mx-auto max-w-md rounded-full p-1.5 flex gap-1.5">
+      <button class="btn btn-gold flex-1" data-act="absen"><span data-ic="circle-check"></span> Isi Kehadiran</button>
+      <button class="btn btn-primary flex-1" data-act="daftar"><span data-ic="user-plus"></span> Daftar</button>
+    </div>
+  </nav>
+
+  <div id="toasts" class="toast-wrap" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/public.js" defer></script>
+  <script src="js/peserta.js" defer></script>
+</body>
+</html>

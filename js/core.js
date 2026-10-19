@@ -45,6 +45,12 @@
     return '<span class="relative inline-flex items-center justify-center rounded-full overflow-hidden text-white font-semibold shrink-0 ' + s + '" style="background:linear-gradient(135deg,' + g[0] + ',' + g[1] + ')" aria-hidden="true">' + esc(initials(nama)) +
       (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover" data-fallback="1">' : '') + '</span>';
   }
+  /** Foto orang bila ada; bila tidak ada (atau gagal dimuat) tampil ikon orang di atas gradien. */
+  function personIcon(foto, size, alt) {
+    var s = size || 'w-20 h-20';
+    return '<span class="relative inline-flex items-center justify-center rounded-full overflow-hidden text-white shrink-0 ring-2 ring-gold/50 ' + s + '" style="background:linear-gradient(135deg,#0B3D2E,#14614B)">' + ic('user-round', 'w-1/2 h-1/2 opacity-80') +
+      (foto ? '<img src="' + esc(foto) + '" alt="' + esc(alt || '') + '" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover" data-fallback="1">' : '') + '</span>';
+  }
   document.addEventListener('error', function (e) { var t = e.target; if (t && t.tagName === 'IMG' && t.dataset.fallback) t.remove(); }, true);
 
   document.addEventListener('load', function (e) { var t = e.target; if (t && t.tagName === 'IMG') t.classList.add('ld'); }, true);
@@ -192,7 +198,7 @@
     var url = URL.createObjectURL(new Blob([arr], { type: mime })), a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
   }
 
-  window.UI = { $: $, $$: $$, esc: esc, nl2br: nl2br, ic: ic, debounce: debounce, idle: idle, fmtTgl: fmtTgl, fmtTglPanjang: fmtTglPanjang, fmtWaktu: fmtWaktu, todayStr: todayStr, tglParts: tglParts, num: num,
+  window.UI = { $: $, $$: $$, esc: esc, nl2br: nl2br, ic: ic, debounce: debounce, idle: idle, fmtTgl: fmtTgl, personIcon: personIcon, fmtTglPanjang: fmtTglPanjang, fmtWaktu: fmtWaktu, todayStr: todayStr, tglParts: tglParts, num: num,
     star: star, art: art, avatar: avatar, initials: initials, toast: toast, modal: modal, modalHead: modalHead, confirm: confirmBox, drawer: drawer, initTheme: initTheme,
     route: route, show: show, go: go, parseHash: parseHash, formData: formData, busy: busy, fieldErr: fieldErr, normHp: normHp, validHp: validHp, imageToB64: imageToB64, fileToB64: fileToB64, download: download, hash: hash };
 })();

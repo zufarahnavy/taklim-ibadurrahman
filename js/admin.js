@@ -17,7 +17,7 @@
     { k: 'ringkasan', l: 'Ringkasan', i: 'layout-dashboard' }, { k: 'peserta', l: 'Peserta', i: 'users' }, { k: 'kegiatan', l: 'Kegiatan & Absensi', i: 'calendar-days' },
     { k: 'narasumber', l: 'Narasumber', i: 'mic-vocal' }, { k: 'berita', l: 'Berita', i: 'newspaper' }, { k: 'materi', l: 'Materi', i: 'file-text' },
     { k: 'banner', l: 'Banner Beranda', i: 'image', lazy: 1 }, { k: 'galeri', l: 'Galeri Kegiatan', i: 'images', lazy: 1 },
-    { k: 'grandprize', l: 'Grand Prize', i: 'trophy', lazy: 1 }, { k: 'form', l: 'Form Builder', i: 'clipboard-list', lazy: 1 }, { k: 'laporan', l: 'Laporan', i: 'file-spreadsheet', lazy: 1 },
+    { k: 'broadcast', l: 'Broadcast WhatsApp', i: 'message-circle', lazy: 1 }, { k: 'grandprize', l: 'Grand Prize', i: 'trophy', lazy: 1 }, { k: 'form', l: 'Form Builder', i: 'clipboard-list', lazy: 1 }, { k: 'laporan', l: 'Laporan', i: 'file-spreadsheet', lazy: 1 },
     { k: 'about', l: 'Konten About', i: 'book-open', lazy: 1 }, { k: 'migrasi', l: 'Migrasi Data', i: 'database', lazy: 1 }, { k: 'backup', l: 'Backup & Restore', i: 'hard-drive', lazy: 1 },
     { k: 'logo', l: 'Logo & Identitas', i: 'badge-check', lazy: 1 },
     { k: 'pengaturan', l: 'Pengaturan & Audit', i: 'settings', lazy: 1 }
@@ -28,7 +28,7 @@
   var extraP = null;
   function ensureExtra() {
     if (Admin.extraLoaded) return Promise.resolve();
-    if (!extraP) extraP = Promise.all(['js/admin-lanjut.js?v=2', 'js/admin-media.js?v=2'].map(function (src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); })).then(function () { Admin.extraLoaded = true; }, function () { extraP = null; throw new Error('muat'); });
+    if (!extraP) extraP = Promise.all(['js/admin-lanjut.js?v=2', 'js/admin-media.js?v=2', 'js/admin-broadcast.js?v=2'].map(function (src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); })).then(function () { Admin.extraLoaded = true; }, function () { extraP = null; throw new Error('muat'); });
     return extraP;
   }
 

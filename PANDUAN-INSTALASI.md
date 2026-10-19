@@ -6,8 +6,8 @@
 > Karena ada fitur baru di backend, lakukan **kedua** langkah ini (urutannya penting):
 >
 > **1. Perbarui backend (±3 menit)**
-> 1. Buka proyek Apps Script Anda → ganti isi file **Db.gs, Kode.gs, Layanan.gs, Admin.gs** dengan versi baru (file `.gs` dikirim terpisah). `Dummy.gs`, `Migrasi.gs`, `appsscript.json` tidak berubah.
-> 2. Pilih fungsi **`perbaruiStruktur`** → **Run**. Ini membuat sheet `Banner` & `Galeri` serta folder Drive `Logo`, `Banner`, `Galeri` (aman dijalankan berulang; data lama tidak disentuh). Izinkan akses bila diminta.
+> 1. Buka proyek Apps Script Anda → ganti isi file **Db.gs, Kode.gs, Layanan.gs, Admin.gs, Migrasi.gs, Dummy.gs** dengan versi baru (file `.gs` dikirim terpisah). `appsscript.json` tidak berubah.
+> 2. Pilih fungsi **`perbaruiStruktur`** → **Run**. Ini membuat sheet `Banner` & `Galeri`, kolom `Kode` di sheet Peserta, folder Drive `Logo`, `Banner`, `Galeri`, serta **memberi ID Peserta (MTI-2026-001, dst.) ke semua peserta lama** berurutan sesuai tanggal daftar (aman dijalankan berulang; data lama tidak disentuh). Izinkan akses bila diminta.
 > 3. **Deploy → Manage deployments → ✏️ Edit → Version: _New version_ → Deploy.**
 >    ⚠️ Jangan pilih "New deployment" — URL `/exec` akan berubah dan Anda harus mengganti `GAS_URL` lagi.
 >
@@ -20,6 +20,7 @@
 >
 > ---
 > ### Cara memakai fitur baru
+- **ID Peserta:** setiap peserta mendapat ID unik berformat `MTI-TAHUN-NOMOR` (mis. `MTI-2026-001`), tampil setelah mendaftar, di Dashboard (bisa disalin), dan di tabel Peserta admin (kolom *ID*, bisa dicari). Peserta **masuk & mengisi kehadiran cukup dengan ID atau nomor HP** yang didaftarkan (penulisan ID longgar: `mti 2026 1` tetap dikenali). Catatan keamanan: login memakai nomor HP saja tergolong lemah; percobaan beruntun dibatasi otomatis (rate limit). Peserta baru dari admin/impor/dummy otomatis mendapat ID.
 > - **Logo:** Panel → *Logo & Identitas* → unggah PNG persegi (latar transparan lebih baik) → *Simpan logo*. Muncul di header, footer, panel admin, dan ikon tab.
 > - **Banner beranda:** Panel → *Banner Beranda* → *Unggah banyak foto* (maks. 10 sekali unggah) atau *Tambah banner*. Urutkan dengan tombol panah, sembunyikan sementara dengan *Sembunyikan*, hapus banyak sekaligus dengan checklist. Gunakan foto lanskap 16:9.
 > - **Poster kegiatan:** isi kolom *Poster* saat menambah/mengubah kegiatan. Poster tampil utuh di kartu kegiatan, di *hero* kegiatan pada Beranda & halaman Event, dan bisa diperbesar.

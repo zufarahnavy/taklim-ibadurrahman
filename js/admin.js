@@ -228,21 +228,23 @@
   }
   Admin.views.peserta = function (main) {
     function draw() {
-      var q = qPes.toLowerCase(), rows = list('peserta').filter(function (p) { return !q || (p.Nama + ' ' + p.No_HP + ' ' + p.Alamat).toLowerCase().indexOf(q) >= 0; });
+      var q = qPes.toLowerCase(), rows = list('peserta').filter(function (p) { return !q || (p.Nama + ' ' + p.No_HP + ' ' + p.Alamat + ' ' + p.Kode).toLowerCase().indexOf(q) >= 0; });
       var exist = {}; list('peserta').forEach(function (p) { exist[p.ID] = 1; }); Object.keys(selPes).forEach(function (k) { if (!exist[k]) delete selPes[k]; });
       main.innerHTML = pageHead('Peserta', U.num(list('peserta').length) + ' peserta terdaftar', '<button class="btn btn-gold btn-sm" data-view="migrasi">' + ic('upload', 'w-4 h-4') + ' Impor file</button><button class="btn btn-gold btn-sm" data-bulk-add>' + ic('list-plus', 'w-4 h-4') + ' Tambah banyak</button><button class="btn btn-primary btn-sm" data-add="peserta">' + ic('plus', 'w-4 h-4') + ' Tambah peserta</button>') +
-        '<div class="mb-4">' + searchBox('q-pes', 'Cari nama / HP / alamat…', qPes) + '</div><div id="pes-bar">' + pesBar() + '</div>' +
-        tableWrap('<table class="tbl"><thead><tr><th class="w-12"><input type="checkbox" id="sel-all" aria-label="Pilih semua peserta yang tampil"></th><th>Nama</th><th>No. HP</th><th class="hidden md:table-cell">Alamat</th><th>Hadir</th><th>Status</th><th class="text-right">Aksi</th></tr></thead><tbody>' +
+        '<div class="mb-4">' + searchBox('q-pes', 'Cari nama / ID / HP / alamat…', qPes) + '</div><div id="pes-bar">' + pesBar() + '</div>' +
+        tableWrap('<table class="tbl"><thead><tr><th class="w-12"><input type="checkbox" id="sel-all" aria-label="Pilih semua peserta yang tampil"></th><th>ID</th><th>Nama</th><th>No. HP</th><th class="hidden md:table-cell">Alamat</th><th>Hadir</th><th>Status</th><th class="text-right">Aksi</th></tr></thead><tbody>' +
           (rows.length ? rows.slice(0, 300).map(function (p) {
-            return '<tr><td><input type="checkbox" data-sel="' + esc(p.ID) + '" aria-label="Pilih ' + esc(p.Nama) + '"' + (selPes[p.ID] ? ' checked' : '') + '></td><td><div class="flex items-center gap-3 min-w-[180px]">' + U.avatar(p.Nama, p.Foto_URL, 'w-9 h-9 text-xs') + '<span class="font-medium">' + esc(p.Nama) + (p.Is_Dummy === 'TRUE' ? ' <span class="badge badge-off ml-1">dummy</span>' : '') + '</span></div></td><td class="whitespace-nowrap">' + esc(p.No_HP) + '</td><td class="hidden md:table-cell text-muted">' + esc(p.Alamat) + '</td><td>' + (p.jumlahHadir || 0) + '×</td>' +
+            return '<tr><td><input type="checkbox" data-sel="' + esc(p.ID) + '" aria-label="Pilih ' + esc(p.Nama) + '"' + (selPes[p.ID] ? ' checked' : '') + '></td><td class="whitespace-nowrap font-mono text-xs font-semibold text-gold-ink">' + esc(p.Kode || '…') + '</td><td><div class="flex items-center gap-3 min-w-[180px]">' + U.avatar(p.Nama, p.Foto_URL, 'w-9 h-9 text-xs') + '<span class="font-medium">' + esc(p.Nama) + (p.Is_Dummy === 'TRUE' ? ' <span class="badge badge-off ml-1">dummy</span>' : '') + '</span></div></td><td class="whitespace-nowrap">' + esc(p.No_HP) + '</td><td class="hidden md:table-cell text-muted">' + esc(p.Alamat) + '</td><td>' + (p.jumlahHadir || 0) + '×</td>' +
               '<td><button class="badge ' + (p.Status === 'Aktif' ? 'badge-ok' : 'badge-off') + '" data-pstatus="' + esc(p.ID) + '" aria-label="Ubah status ' + esc(p.Nama) + '">' + esc(p.Status) + '</button></td>' +
-              '<td class="text-right whitespace-nowrap"><button class="btn btn-ghost btn-sm btn-icon" data-edit="peserta" data-id="' + esc(p.ID) + '" aria-label="Ubah ' + esc(p.Nama) + '">' + ic('pencil', 'w-4 h-4') + '</button><button class="btn btn-ghost btn-sm btn-icon text-danger" data-del="peserta" data-id="' + esc(p.ID) + '" data-label="' + esc(p.Nama) + '" aria-label="Hapus ' + esc(p.Nama) + '">' + ic('trash-2', 'w-4 h-4') + '</button></td></tr>'; }).join('') : '<tr><td colspan="7" class="text-center text-muted py-10">Tidak ada peserta.</td></tr>') + '</tbody></table>') +
+              '<td class="text-right whitespace-nowrap"><button class="btn btn-ghost btn-sm btn-icon" data-edit="peserta" data-id="' + esc(p.ID) + '" aria-label="Ubah ' + esc(p.Nama) + '">' + ic('pencil', 'w-4 h-4') + '</button><button class="btn btn-ghost btn-sm btn-icon text-danger" data-del="peserta" data-id="' + esc(p.ID) + '" data-label="' + esc(p.Nama) + '" aria-label="Hapus ' + esc(p.Nama) + '">' + ic('trash-2', 'w-4 h-4') + '</button></td></tr>'; }).join('') : '<tr><td colspan="8" class="text-center text-muted py-10">Tidak ada peserta.</td></tr>') + '</tbody></table>') +
         (rows.length > 300 ? '<p class="text-xs text-muted mt-3">Menampilkan 300 teratas — gunakan pencarian untuk mempersempit.</p>' : '');
       bindSearch('q-pes', function (v) { qPes = v; draw(); var n = $('#q-pes'); n.focus(); n.setSelectionRange(v.length, v.length); });
       syncSel();
     }
     draw();
+    if (!kodeTried && list('peserta').some(function (p) { return !p.Kode; })) { kodeTried = true; req('kodeLengkapi').then(function (r) { if (r.success && r.data.dibuat) refreshBoot(true); }); }
   };
+  var kodeTried = false;
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t.closest || !t.closest('#adm-main')) return;
     if (t.id === 'sel-all') { $$('[data-sel]').forEach(function (c) { c.checked = t.checked; if (t.checked) selPes[c.dataset.sel] = 1; else delete selPes[c.dataset.sel]; }); return syncSel(); }

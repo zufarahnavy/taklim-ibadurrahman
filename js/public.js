@@ -23,7 +23,7 @@
     return { t: 'Selesai', c: 'badge-off' };
   };
   App.identity = function () { try { return JSON.parse(lsGet('sim:ident') || 'null') || {}; } catch (e) { return {}; } };
-  App.saveIdentity = function (nama, hp) { lsSet('sim:ident', JSON.stringify({ nama: nama, hp: hp })); };
+  App.saveIdentity = function (nama, hp, kode) { lsSet('sim:ident', JSON.stringify({ nama: nama, hp: hp, kode: kode || '' })); };
   App.me = function () { var s = Session.get('peserta'); return s ? s.profil : null; };
   function sk(n, h, cls) { var o = ''; for (var i = 0; i < n; i++) o += '<div class="skeleton ' + (cls || '') + '" style="height:' + (h || 220) + 'px;border-radius:1.5rem"></div>'; return o; }
   function sectionHead(desc, title, id, link) {

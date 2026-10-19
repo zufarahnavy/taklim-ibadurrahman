@@ -1,6 +1,6 @@
 /**
  * peserta.js — Alur peserta: Daftar, Isi Kehadiran, Verifikasi, Data Diri, Formulir, dan Dashboard pribadi.
- * Identitas peserta: Nama + No. HP (tanpa kata sandi). Sesi 12 jam disimpan di perangkat ini.
+ * Identitas peserta: ID Peserta (MTI-2026-001) ATAU No. HP (tanpa kata sandi). Sesi 12 jam disimpan di perangkat ini.
  */
 (function () {
   'use strict';
@@ -9,22 +9,33 @@
   function B() { return App.S.boot; }
   function setSession(res) {
     Session.set('peserta', { token: res.token, exp: res.exp, profil: res.profil });
-    App.saveIdentity(res.profil.nama, res.profil.hp);
+    App.saveIdentity(res.profil.nama, res.profil.hp, res.profil.kode);
     SWR.drop('dash:' + res.profil.id, 'd');
   }
   function field(id, label, input, hint) { return '<div><label class="label" for="' + id + '">' + esc(label) + '</label>' + input + (hint ? '<p class="hint">' + esc(hint) + '</p>' : '') + '</div>'; }
   var NAMA_IN = function (v) { return '<input class="field" id="f-nama" name="nama" type="text" autocomplete="name" required minlength="3" maxlength="80" placeholder="Nama lengkap sesuai pendaftaran" value="' + esc(v || '') + '">'; };
   var HP_IN = function (v) { return '<input class="field" id="f-hp" name="hp" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" placeholder="08xxxxxxxxxx" value="' + esc(v || '') + '">'; };
-  function successView(icon, title, text, buttons) {
-    return '<div class="px-6 py-10 text-center"><div class="w-20 h-20 rounded-full bg-ok-soft text-ok flex items-center justify-center mx-auto">' + ic(icon, 'w-10 h-10') + '</div><h2 class="text-2xl font-semibold mt-5">' + esc(title) + '</h2><p class="text-muted mt-2">' + text + '</p><div class="flex flex-col sm:flex-row gap-3 justify-center mt-7">' + buttons + '</div></div>';
+  var IDHP_IN = function (v, id) { return '<input class="field" id="' + (id || 'f-idhp') + '" name="idhp" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required maxlength="24" placeholder="MTI-2026-001 atau 08xxxxxxxxxx" value="' + esc(v || '') + '">'; };
+  var IDHP_HINT = 'Isi ID Peserta Anda (mis. MTI-2026-001) atau nomor HP yang didaftarkan.';
+  function okIdHp(v) { v = String(v || '').trim(); return /^MTI[\s\-_.]*\d{4}[\s\-_.]*\d{1,5}$/i.test(v) || U.validHp(v); }
+  function idCard(kode) {
+    return kode ? '<div class="mt-5 rounded-2xl border border-gold bg-gold-pale/50 px-5 py-4 text-center"><p class="text-sm text-muted">ID Peserta Anda</p><p class="font-display text-3xl font-semibold tracking-wide mt-1" id="kode-teks">' + esc(kode) + '</p>' +
+      '<button type="button" class="btn btn-line btn-sm mt-3" data-copy="' + esc(kode) + '">' + ic('copy', 'w-4 h-4') + ' Salin ID</button><p class="text-xs text-muted mt-3">Simpan ID ini. Anda bisa masuk dan mengisi kehadiran cukup dengan ID atau nomor HP.</p></div>' : '';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-copy]'); if (!b) return;
+    var v = b.dataset.copy; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function () { U.toast('ID disalin: ' + v, 'ok'); }, function () { U.toast('Salin manual: ' + v); });
+  });
+  function successView(icon, title, text, buttons, extra) {
+    return '<div class="px-6 py-10 text-center"><div class="w-20 h-20 rounded-full bg-ok-soft text-ok flex items-center justify-center mx-auto">' + ic(icon, 'w-10 h-10') + '</div><h2 class="text-2xl font-semibold mt-5">' + esc(title) + '</h2><p class="text-muted mt-2">' + text + '</p>' + (extra || '') + '<div class="flex flex-col sm:flex-row gap-3 justify-center mt-7">' + buttons + '</div></div>';
   }
 
   // ---------- Daftar ----------
   function openDaftar() {
     if (App.me()) { U.toast('Anda sudah terdaftar & terverifikasi di perangkat ini.', 'ok'); return U.go('dashboard'); }
     warmUp();
-    var m = U.modal(U.modalHead('Daftar Peserta', 'Cukup nama & nomor HP. Data Anda tidak ditampilkan ke publik.') +
-      '<form class="px-6 pb-6 space-y-4" novalidate>' + field('f-nama', 'Nama lengkap', NAMA_IN()) + field('f-hp', 'Nomor HP / WhatsApp', HP_IN(), 'Dipakai sebagai identitas saat absensi. Contoh: 081234567890') +
+    var m = U.modal(U.modalHead('Daftar Peserta', 'Cukup nama & nomor HP. Anda akan mendapat ID Peserta pribadi.') +
+      '<form class="px-6 pb-6 space-y-4" novalidate>' + field('f-nama', 'Nama lengkap', NAMA_IN()) + field('f-hp', 'Nomor HP / WhatsApp', HP_IN(), 'Bisa dipakai untuk masuk dan absen. Contoh: 081234567890') +
       field('f-alamat', 'Alamat (opsional)', '<textarea class="field" id="f-alamat" name="alamat" rows="2" maxlength="250" placeholder="Kecamatan / kota"></textarea>') +
       field('f-foto', 'Foto (opsional)', '<input class="field !pt-2.5" id="f-foto" name="foto" type="file" accept="image/*">') +
       '<div class="flex gap-3 justify-end pt-2"><button type="button" class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" type="submit">Daftar</button></div></form>', { label: 'Daftar peserta' });
@@ -42,7 +53,7 @@
         if (!r.success) return U.toast(r.message, 'error');
         setSession(r.data); App.loadBoot(true);
         m.el.innerHTML = successView('circle-check', 'Pendaftaran berhasil', 'Selamat bergabung, <strong>' + esc(r.data.profil.nama) + '</strong>. Anda sudah bisa mengisi kehadiran.',
-          '<button class="btn btn-gold" data-close data-act="absen">Isi Kehadiran</button><button class="btn btn-primary" data-close data-go="dashboard">Buka Dashboard</button>');
+          '<button class="btn btn-gold" data-close data-act="absen">Isi Kehadiran</button><button class="btn btn-primary" data-close data-go="dashboard">Buka Dashboard</button>', idCard(r.data.profil.kode));
         App.renderDash(); prefetchDash();
       });
     });
@@ -59,9 +70,9 @@
         '<h3 class="text-xl font-semibold mt-4">Absensi belum dibuka</h3><p class="text-muted mt-2 text-sm">Absensi hanya bisa diisi saat pengurus membukanya pada hari kajian.' + (up ? '<br>Kajian berikutnya: <strong>' + esc(up.judul) + '</strong> (' + U.fmtTgl(up.tanggal) + ').' : '') + '</p><button class="btn btn-primary mt-6" data-close>Mengerti</button></div>', { label: 'Absensi belum dibuka' });
     }
     var sel = preId && open.some(function (k) { return k.id === preId; }) ? preId : open[0].id;
-    var m = U.modal(U.modalHead('Isi Kehadiran', 'Masukkan identitas yang Anda daftarkan.') +
+    var m = U.modal(U.modalHead('Isi Kehadiran', 'Cukup masukkan ID Peserta atau nomor HP Anda.') +
       '<form class="px-6 pb-6 space-y-4" novalidate>' + field('f-kg', 'Kegiatan', '<select class="field" id="f-kg" name="kegiatanId">' + open.map(function (k) { return '<option value="' + esc(k.id) + '"' + (k.id === sel ? ' selected' : '') + '>' + esc(k.judul + ' — ' + U.fmtTgl(k.tanggal)) + '</option>'; }).join('') + '</select>') +
-      field('f-nama', 'Nama lengkap', NAMA_IN(me.nama || ident.nama)) + field('f-hp', 'Nomor HP', HP_IN(me.hp || ident.hp)) +
+      field('f-idhp', 'ID Peserta atau No. HP', IDHP_IN(me.kode || ident.kode || me.hp || ident.hp), IDHP_HINT) +
       '<p class="err hidden" id="absen-err" role="alert"></p>' +
       '<div class="flex gap-3 justify-end pt-2"><button type="button" class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" type="submit">' + ic('circle-check', 'w-5 h-5') + ' Hadir</button></div>' +
       '<p class="text-center text-sm text-muted">Belum terdaftar? <button type="button" class="font-semibold text-heading underline" data-close data-act="daftar">Daftar dulu</button></p></form>', { label: 'Isi kehadiran' });
@@ -69,10 +80,9 @@
     form.addEventListener('submit', function (e) {
       e.preventDefault(); var d = U.formData(form), btn = $('[type=submit]', form), er = $('#absen-err', form);
       er.classList.add('hidden');
-      if (d.nama.trim().length < 3) return U.fieldErr(form, 'nama', 'Isi nama lengkap Anda.');
-      if (!U.validHp(d.hp)) return U.fieldErr(form, 'hp', 'Nomor HP tidak valid.');
+      if (!okIdHp(d.idhp)) return U.fieldErr(form, 'idhp', 'Isi ID Peserta (MTI-2026-001) atau nomor HP yang valid.');
       U.busy(btn, true, 'Mencatat…');
-      api('absen', { nama: d.nama, hp: d.hp, kegiatanId: d.kegiatanId }, { role: 'peserta', noToken: true }).then(function (r) {
+      api('absen', { idhp: d.idhp.trim(), kegiatanId: d.kegiatanId }, { role: 'peserta', noToken: true }).then(function (r) {
         U.busy(btn, false);
         if (!r.success) { er.textContent = r.message; er.classList.remove('hidden'); return; }
         setSession(r.data); App.loadBoot(true);
@@ -86,16 +96,15 @@
   // ---------- Verifikasi ----------
   function verifFormHtml() {
     var ident = App.identity();
-    return '<form data-form="verif" class="space-y-4" novalidate>' + field('v-nama', 'Nama lengkap', NAMA_IN(ident.nama).replace('id="f-nama"', 'id="v-nama"')) + field('v-hp', 'Nomor HP', HP_IN(ident.hp).replace('id="f-hp"', 'id="v-hp"')) +
+    return '<form data-form="verif" class="space-y-4" novalidate>' + field('v-idhp', 'ID Peserta atau No. HP', IDHP_IN(ident.kode || ident.hp, 'v-idhp'), IDHP_HINT) +
       '<p class="err hidden" role="alert" data-err></p><button class="btn btn-primary w-full" type="submit">' + ic('log-in', 'w-5 h-5') + ' Masuk</button>' +
       '<p class="text-center text-sm text-muted">Belum punya akun? <button type="button" class="font-semibold text-heading underline" data-act="daftar">Daftar peserta</button></p></form>';
   }
   function submitVerif(form, after) {
     var d = U.formData(form), btn = $('[type=submit]', form), er = $('[data-err]', form); er.classList.add('hidden');
-    if (d.nama.trim().length < 3) return U.fieldErr(form, 'nama', 'Isi nama lengkap Anda.');
-    if (!U.validHp(d.hp)) return U.fieldErr(form, 'hp', 'Nomor HP tidak valid.');
+    if (!okIdHp(d.idhp)) return U.fieldErr(form, 'idhp', 'Isi ID Peserta (MTI-2026-001) atau nomor HP yang valid.');
     U.busy(btn, true, 'Memeriksa…');
-    api('verifikasi', { nama: d.nama, hp: d.hp }, { role: 'peserta', noToken: true }).then(function (r) {
+    api('verifikasi', { idhp: d.idhp.trim() }, { role: 'peserta', noToken: true }).then(function (r) {
       U.busy(btn, false);
       if (!r.success) { er.textContent = r.message; er.classList.remove('hidden'); return; }
       setSession(r.data); U.toast('Selamat datang, ' + r.data.profil.nama + '!', 'ok'); App.renderDash(); prefetchDash(true);
@@ -103,7 +112,7 @@
     });
   }
   function openVerif(after) {
-    var m = U.modal(U.modalHead('Verifikasi Peserta', 'Masukkan nama & nomor HP yang Anda daftarkan.') + '<div class="px-6 pb-6">' + verifFormHtml() + '</div>', { label: 'Verifikasi' });
+    var m = U.modal(U.modalHead('Verifikasi Peserta', 'Masukkan ID Peserta atau nomor HP Anda.') + '<div class="px-6 pb-6">' + verifFormHtml() + '</div>', { label: 'Verifikasi' });
     $('form', m.el).addEventListener('submit', function (e) { e.preventDefault(); submitVerif(e.target, function () { m.close(); if (after) after(); }); });
   }
 
@@ -111,7 +120,7 @@
   function openDataDiri() {
     var me = App.me(); if (!me) return openVerif(openDataDiri);
     var m = U.modal(U.modalHead('Data Diri', 'Hanya Anda dan pengurus yang dapat melihat data ini.') +
-      '<form class="px-6 pb-6 space-y-4" novalidate><div class="flex items-center gap-4">' + U.avatar(me.nama, me.foto, 'w-16 h-16 text-xl') + '<div class="min-w-0"><p class="font-semibold truncate">' + esc(me.nama) + '</p><p class="text-sm text-muted">' + esc(me.hp) + ' · terdaftar ' + U.fmtTgl(me.daftar) + '</p></div></div>' +
+      '<form class="px-6 pb-6 space-y-4" novalidate><div class="flex items-center gap-4">' + U.avatar(me.nama, me.foto, 'w-16 h-16 text-xl') + '<div class="min-w-0"><p class="font-semibold truncate">' + esc(me.nama) + '</p><p class="text-sm font-semibold text-gold-ink">' + esc(me.kode || '') + '</p><p class="text-sm text-muted">' + esc(me.hp) + ' · terdaftar ' + U.fmtTgl(me.daftar) + '</p></div></div>' +
       field('f-nama', 'Nama lengkap', NAMA_IN(me.nama)) + field('f-alamat', 'Alamat', '<textarea class="field" id="f-alamat" name="alamat" rows="2" maxlength="250">' + esc(me.alamat || '') + '</textarea>') +
       field('f-foto', 'Ganti foto', '<input class="field !pt-2.5" id="f-foto" type="file" accept="image/*">') +
       '<p class="hint">Nomor HP tidak dapat diubah sendiri. Hubungi pengurus bila perlu mengganti nomor.</p>' +
@@ -126,7 +135,7 @@
         return api('dataDiriSimpan', p, { role: 'peserta' });
       }).then(function (r) {
         U.busy(btn, false); if (!r.success) return U.toast(r.message, 'error');
-        var s = Session.get('peserta'); s.profil = r.data; Session.set('peserta', s); App.saveIdentity(r.data.nama, r.data.hp);
+        var s = Session.get('peserta'); s.profil = r.data; Session.set('peserta', s); App.saveIdentity(r.data.nama, r.data.hp, r.data.kode);
         U.toast('Data diri diperbarui', 'ok'); m.close(); App.renderDash();
       });
     });
@@ -199,7 +208,7 @@
   }
   function guestView(b) {
     var st = b.stat, aktif = b.program.filter(function (g) { return g.status === 'Aktif'; });
-    return App.pageHead('Pantau progres Anda', 'Masuk dengan nama & nomor HP untuk melihat riwayat kehadiran, peringkat, dan kelayakan Grand Prize.', 'h-dash') +
+    return App.pageHead('Pantau progres Anda', 'Masuk dengan ID Peserta atau nomor HP untuk melihat riwayat kehadiran, peringkat, dan kelayakan Grand Prize.', 'h-dash') +
       '<div class="grid lg:grid-cols-5 gap-6 mt-10"><div class="card p-8 lg:col-span-2 self-start"><div class="w-12 h-12 rounded-2xl bg-brand text-on-brand flex items-center justify-center">' + ic('user-round', 'w-6 h-6') + '</div><h2 class="text-2xl font-semibold mt-4 mb-5">Masuk Peserta</h2>' + verifFormHtml() + '</div>' +
       '<div class="lg:col-span-3 space-y-6"><div class="grid grid-cols-3 gap-4">' + statCard('users', 'Peserta', U.num(st.peserta)) + statCard('calendar-days', 'Kegiatan', U.num(st.kegiatan)) + statCard('trending-up', 'Rata-rata hadir', st.rata + '%') + '</div>' +
       (aktif.length ? aktif.map(function (g) { return '<div class="card p-6 flex items-center gap-4"><div class="w-12 h-12 rounded-2xl gold-banner flex items-center justify-center shrink-0">' + ic('gift', 'w-6 h-6') + '</div><div class="min-w-0"><p class="font-display text-lg font-semibold">' + esc(g.nama) + '</p><p class="text-sm text-muted">Hadir minimal ' + g.min + '× · ' + g.pemenang + ' pemenang</p></div></div>'; }).join('') : '') +
@@ -208,7 +217,7 @@
   function memberView(b, me, d) {
     var t = d ? d.hadir : null;
     var head = '<div class="card p-6 sm:p-8 flex flex-wrap items-center justify-between gap-5 relative overflow-hidden"><div class="star-pattern absolute inset-0 opacity-40" aria-hidden="true"></div><div class="relative flex items-center gap-4 min-w-0">' + U.avatar(me.nama, me.foto, 'w-16 h-16 text-xl ring-4 ring-gold-pale') +
-      '<div class="min-w-0"><p class="text-sm text-muted">Assalamu\'alaikum,</p><h1 id="h-dash" class="font-display text-2xl sm:text-3xl font-semibold truncate">' + esc(me.nama) + '</h1>' + (d && d.peringkat ? '<span class="badge mt-1">' + ic('award', 'w-4 h-4') + ' Peringkat #' + d.peringkat + ' dari ' + d.totalPeserta + '</span>' : '') + '</div></div>' +
+      '<div class="min-w-0"><p class="text-sm text-muted">Assalamu\'alaikum,</p><h1 id="h-dash" class="font-display text-2xl sm:text-3xl font-semibold truncate">' + esc(me.nama) + '</h1>' + (me.kode ? '<button type="button" class="badge badge-off mt-1 mr-1" data-copy="' + esc(me.kode) + '" title="Salin ID Peserta">' + ic('badge-check', 'w-4 h-4') + ' ' + esc(me.kode) + '</button>' : '') + (d && d.peringkat ? '<span class="badge mt-1">' + ic('award', 'w-4 h-4') + ' Peringkat #' + d.peringkat + ' dari ' + d.totalPeserta + '</span>' : '') + '</div></div>' +
       '<div class="relative flex gap-2"><button class="btn btn-gold btn-sm" data-act="data-diri">' + ic('user-round', 'w-4 h-4') + ' Data Diri</button><button class="btn btn-ghost btn-sm" data-act="logout-peserta">' + ic('log-out', 'w-4 h-4') + ' Keluar</button></div></div>';
     if (!d) return head + '<div class="grid md:grid-cols-3 gap-6 mt-6">' + App.sk(3, 150) + '</div><div class="mt-6">' + App.sk(1, 260) + '</div>';
     var forms = (d.formBelum || []).map(function (id) { return (b.form || []).filter(function (f) { return f.id === id; })[0]; }).filter(Boolean);

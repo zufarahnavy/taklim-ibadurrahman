@@ -163,8 +163,8 @@
   }
   function busy(btn, on, label) {
     if (!btn) return;
-    if (on) { btn.dataset.l = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg><span>' + esc(label || 'Memproses…') + '</span>'; }
-    else { btn.disabled = false; if (btn.dataset.l) btn.innerHTML = btn.dataset.l; }
+    if (on) { if (btn.dataset.b === '1') return; btn.dataset.b = '1'; btn.dataset.l = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg><span>' + esc(label || 'Memproses…') + '</span>'; }
+    else { btn.disabled = false; if (btn.dataset.b === '1' && btn.dataset.l != null) btn.innerHTML = btn.dataset.l; btn.dataset.b = ''; }
   }
   function fieldErr(form, name, msg) {
     var el = form.querySelector('[name="' + name + '"]'); if (!el) return;

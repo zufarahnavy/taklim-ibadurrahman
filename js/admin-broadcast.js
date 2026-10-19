@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   var U = UI, $ = U.$, $$ = U.$$, esc = U.esc, ic = U.ic, Admin = window.Admin, A = Admin.A, H = Admin.h, req = H.req;
-  var LS = 'sim:bc-sent';
+  var LS = 'sim:bc-sent', BC = null;   // BC: keadaan disimpan di luar render agar tidak hilang saat panel menyegarkan data
   function lsGet() { try { return JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { return {}; } }
   function lsSet(v) { try { localStorage.setItem(LS, JSON.stringify(v)); } catch (e) {} }
   function hash(s) { return String(U.hash ? U.hash(s) : s.length); }
@@ -23,12 +23,16 @@
     var today = U.todayStr ? U.todayStr() : new Date().toISOString().slice(0, 10);
     var kegs = H.list('kegiatan').slice().sort(function (a, b) { return a.Tanggal < b.Tanggal ? 1 : -1; });
     var up = kegs.filter(function (k) { return k.Tanggal >= today; }).sort(function (a, b) { return a.Tanggal < b.Tanggal ? -1 : 1; });
-    var st = { mode: 'manual', batch: 20, jeda: '5-8', cfg: null, blasts: [], tpl: 'reminder', kid: (up[0] || kegs[0] || {}).ID || '', text: '', q: '', sel: null, sent: lsGet() };
+    // render ulang (mis. setelah data disegarkan) tidak boleh menumpuk pendengar acara atau menghapus ketikan
+    if (main._bcAc) main._bcAc.abort(); var ac = main._bcAc = new AbortController(), sig = { signal: ac.signal };
+    if (main._bcTimer) { clearInterval(main._bcTimer); main._bcTimer = null; }
+    var st = BC || (BC = { mode: 'manual', batch: 20, jeda: '5-8', cfg: null, blasts: [], tpl: 'reminder', kid: (up[0] || kegs[0] || {}).ID || '', text: '', q: '', sel: {}, init: false });
+    st.sent = lsGet();
     var people = H.list('peserta').filter(function (p) { return p.Status === 'Aktif' && U.validHp(p.No_HP); });
-    st.sel = {}; people.forEach(function (p) { st.sel[p.ID] = true; });
+    people.forEach(function (p) { if (st.sel[p.ID] === undefined) st.sel[p.ID] = true; });
     function kg() { return kegs.filter(function (k) { return k.ID === st.kid; })[0] || {}; }
     function applyTpl() { st.text = TPL[st.tpl].t + (TPL[st.tpl].t ? orgName() : ''); }
-    applyTpl();
+    if (!st.init) { applyTpl(); st.init = true; }
 
     function fill(text, p) {
       var k = st.tpl === 'reminder' || /\{(kegiatan|tanggal|jam|lokasi)\}/.test(text) ? kg() : {};
@@ -98,12 +102,12 @@
         var nx = chosen().filter(function (p) { return !st.sent[key(p)]; })[0]; if (!nx) return;
         mark(nx); window.open(link(nx), '_blank', 'noopener'); drawList(); return;
       }
-    });
+    }, sig);
     main.addEventListener('change', function (e) {
       var t = e.target;
       if (t.id === 'bc-all') { visible().forEach(function (p) { st.sel[p.ID] = t.checked; }); drawPrev(); drawList(); }
       else if (t.dataset && t.dataset.p) { st.sel[t.dataset.p] = t.checked; drawPrev(); drawList(); }
-    });
+    }, sig);
     $('#bc-q', main).oninput = U.debounce ? U.debounce(function (e) { st.q = e.target.value; drawList(); }, 150) : function (e) { st.q = e.target.value; drawList(); };
     // ---------- Otomatis (Fonnte) ----------
     function setMode(m) {
@@ -133,13 +137,12 @@
         '<p class="text-sm mt-2">' + b.terkirim + ' terkirim · ' + b.gagal + ' gagal · ' + b.sisa + ' menunggu <span class="text-muted">dari ' + b.total + '</span></p>' +
         (run ? '<div class="flex gap-2 mt-3"><button type="button" class="btn btn-gold btn-sm" data-bnow="' + esc(b.id) + '">Kirim batch sekarang</button><button type="button" class="btn btn-ghost btn-sm text-danger" data-bstop="' + esc(b.id) + '">Hentikan</button></div>' : '') + '</li>';
     }
-    var timer = null;
     function drawBlasts() { var ul = $('#bc-blasts', main); if (!ul) return; ul.innerHTML = st.blasts.length ? st.blasts.map(blastHtml).join('') : '<li class="text-sm text-muted">Belum ada pengiriman otomatis.</li>'; }
     function loadBlasts() {
-      if (!main.isConnected) { clearInterval(timer); return; }
-      req('waBlastDaftar').then(function (r) { if (r.success) { st.blasts = r.data; drawBlasts(); if (!st.blasts.some(function (b) { return b.status === 'Berjalan'; })) { clearInterval(timer); timer = null; } } });
+      if (!$('#bc-blasts', main)) { clearInterval(main._bcTimer); main._bcTimer = null; return; }
+      req('waBlastDaftar').then(function (r) { if (r.success) { st.blasts = r.data; drawBlasts(); if (!st.blasts.some(function (b) { return b.status === 'Berjalan'; })) { clearInterval(main._bcTimer); main._bcTimer = null; } } });
     }
-    function poll() { loadBlasts(); if (!timer) timer = setInterval(loadBlasts, 15000); }
+    function poll() { loadBlasts(); if (!main._bcTimer) main._bcTimer = setInterval(loadBlasts, 15000); }
     function info(t, bad) { var e = $('#bc-f-info', main); e.textContent = t; e.className = 'text-sm ' + (bad ? 'text-danger' : 'text-ok'); }
     req('waConfig').then(function (r) { if (r.success) { st.cfg = r.data; st.batch = r.data.batch; st.jeda = r.data.jeda; drawCfg(); } else $('#bc-f-stat', main).textContent = 'Tidak tersedia'; });
     poll();
@@ -147,8 +150,8 @@
       var t = e.target;
       if (t.name === 'bc-mode') setMode(t.value);
       else if (t.name === 'bc-batch') { st.batch = Number(t.value); drawAuto(); }
-    });
-    main.addEventListener('input', function (e) { if (e.target.id === 'bc-jeda') st.jeda = e.target.value.trim(); });
+    }, sig);
+    main.addEventListener('input', function (e) { if (e.target.id === 'bc-jeda') st.jeda = e.target.value.trim(); }, sig);
     main.addEventListener('click', function (e) {
       var b;
       if ((b = e.target.closest('#bc-go'))) {
@@ -171,8 +174,8 @@
       if ((b = e.target.closest('#bc-f-dev'))) { U.busy(b, true, 'Memeriksa…'); req('waPerangkat').then(function (r) { U.busy(b, false); if (!r.success) return info(r.message, true); var d = r.data; info('Nomor ' + d.nomor + ' · status: ' + d.status + (d.paket ? ' · paket ' + d.paket : '') + (d.kuota !== '' ? ' · kuota ' + d.kuota : ''), d.status !== 'connect'); }); return; }
       if ((b = e.target.closest('#bc-f-del'))) { U.confirm('Hapus token Fonnte?', 'Pengiriman otomatis akan nonaktif sampai token diisi lagi.', 'Hapus', true).then(function (okk) { if (okk) req('waConfigSimpan', { token: '__HAPUS__' }).then(function (r) { if (!r.success) return info(r.message, true); st.cfg = r.data; drawCfg(); info('Token dihapus.'); }); }); return; }
       if ((b = e.target.closest('#bc-f-tes'))) { var no = $('#bc-tes', main).value.trim(); if (!U.validHp(no)) return info('Nomor tes tidak valid.', true); U.busy(b, true, 'Mengirim…'); req('waTes', { nomor: no }).then(function (r) { U.busy(b, false); if (!r.success) return info(r.message, true); info('Pesan tes terkirim ke ' + no + '.'); }); return; }
-    });
+    }, sig);
     var _drawList = drawList; drawList = function () { _drawList(); if (st.mode === 'otomatis') drawAuto(); };
-    refresh();
+    refresh(); setMode(st.mode); drawBlasts(); drawCfg();
   };
 })();

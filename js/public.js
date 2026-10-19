@@ -437,7 +437,7 @@
   function loadAdmin() {
     if (window.Admin) return window.Admin.mount($('#admin-root'));
     if (!adminLoading) adminLoading = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/admin.js?v=2'; s.onload = res; s.onerror = function () { adminLoading = null; rej(); }; document.head.appendChild(s);
+      var s = document.createElement('script'); s.src = 'js/admin.js?v=3'; s.onload = res; s.onerror = function () { adminLoading = null; rej(); }; document.head.appendChild(s);
     });
     $('#admin-root').innerHTML = '<div class="min-h-dvh flex items-center justify-center"><div class="skeleton w-64 h-40"></div></div>';
     adminLoading.then(function () { window.Admin.mount($('#admin-root')); }).catch(function () { U.toast('Gagal memuat panel pengurus. Periksa koneksi.', 'error'); });
@@ -457,7 +457,7 @@
     App.loadBoot().then(function () {
       U.idle(function () {                                    // prefetch pintar: halaman yang kemungkinan dibuka berikutnya
         if (Session.get('peserta') && App.prefetchDash) App.prefetchDash();
-        if (Session.get('admin')) { var s = document.createElement('script'); s.src = 'js/admin.js?v=2'; s.defer = true; document.head.appendChild(s); }
+        if (Session.get('admin')) { var s = document.createElement('script'); s.src = 'js/admin.js?v=3'; s.defer = true; document.head.appendChild(s); }
       });
     });
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') App.loadBoot(); });   // segar saat kembali ke tab

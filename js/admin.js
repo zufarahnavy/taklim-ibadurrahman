@@ -28,7 +28,7 @@
   var extraP = null;
   function ensureExtra() {
     if (Admin.extraLoaded) return Promise.resolve();
-    if (!extraP) extraP = Promise.all(['js/admin-lanjut.js?v=2', 'js/admin-media.js?v=2', 'js/admin-broadcast.js?v=2'].map(function (src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); })).then(function () { Admin.extraLoaded = true; }, function () { extraP = null; throw new Error('muat'); });
+    if (!extraP) extraP = Promise.all(['js/admin-lanjut.js?v=3', 'js/admin-media.js?v=3', 'js/admin-broadcast.js?v=3'].map(function (src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); })).then(function () { Admin.extraLoaded = true; }, function () { extraP = null; throw new Error('muat'); });
     return extraP;
   }
 
@@ -103,7 +103,12 @@
     var nv = NAV.filter(function (n) { return n.k === A.view; })[0];
     if (nv && nv.lazy) { main.innerHTML = '<div class="space-y-4">' + App.sk(2, 160) + '</div>'; ensureExtra().then(function () { if (Admin.views[A.view]) { main.innerHTML = ''; Admin.views[A.view](main); } }).catch(function () { U.toast('Gagal memuat modul.', 'error'); }); }
   }
-  Admin.h.render = function () { if (!modalOpen()) renderView(); };
+  /** Segarkan tampilan hanya bila admin tidak sedang mengetik (agar isian formulir tidak hilang saat data latar tersinkron). */
+  Admin.h.render = function () {
+    var ae = document.activeElement;
+    if (modalOpen() || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.closest && ae.closest('#adm-main'))) return;
+    renderView();
+  };
   function modalOpen() { return !!document.querySelector('[data-overlay]'); }
   function setView(k) { A.view = k; renderView(); window.scrollTo(0, 0); var d = $('#adm-drawer'); if (d) { d.hidden = true; document.documentElement.style.overflow = ''; } }
 

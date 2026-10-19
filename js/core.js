@@ -47,6 +47,8 @@
   }
   document.addEventListener('error', function (e) { var t = e.target; if (t && t.tagName === 'IMG' && t.dataset.fallback) t.remove(); }, true);
 
+  document.addEventListener('load', function (e) { var t = e.target; if (t && t.tagName === 'IMG') t.classList.add('ld'); }, true);
+
   // ---------- Toast ----------
   function toast(msg, type) {
     var wrap = $('#toasts'); if (!wrap) return;
@@ -166,7 +168,7 @@
   function normHp(v) { var d = String(v || '').replace(/[^\d+]/g, ''); if (d[0] === '+') d = d.slice(1); if (d.indexOf('00') === 0) d = d.slice(2); if (d[0] === '0') d = '62' + d.slice(1); else if (d[0] === '8') d = '62' + d; return d; }
   function validHp(v) { return /^62\d{8,13}$/.test(normHp(v)); }
   /** Baca gambar → perkecil → JPEG base64 (maks sisi 720px) agar unggahan ringan. */
-  function imageToB64(file, max) {
+  function imageToB64(file, max, fmt) {
     return new Promise(function (res, rej) {
       if (!file) return res(null);
       if (!/^image\//.test(file.type)) return rej(new Error('Berkas harus gambar.'));
@@ -177,7 +179,7 @@
           var m = max || 720, s = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas');
           c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
           c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-          res({ mime: 'image/jpeg', b64: c.toDataURL('image/jpeg', 0.82).split(',')[1], name: 'foto.jpg' });
+          var png = fmt === 'png'; res({ mime: png ? 'image/png' : 'image/jpeg', b64: (png ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.84)).split(',')[1], name: png ? 'logo.png' : 'foto.jpg' });
         }; im.src = fr.result;
       }; fr.readAsDataURL(file);
     });

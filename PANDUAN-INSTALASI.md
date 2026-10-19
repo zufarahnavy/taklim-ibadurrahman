@@ -1,5 +1,35 @@
 # Panduan Instalasi — SIM Ibadurrahman
 
+> ## 🔄 SUDAH PERNAH INSTALL? Baca bagian ini dulu (Pembaruan Revisi 2)
+>
+> Revisi ini menambah: desain beranda baru, banner foto berputar, hero kegiatan berposter, halaman **Galeri**, menu admin **Logo**, **Banner**, **Galeri**, dan **checklist** peserta.
+> Karena ada fitur baru di backend, lakukan **kedua** langkah ini (urutannya penting):
+>
+> **1. Perbarui backend (±3 menit)**
+> 1. Buka proyek Apps Script Anda → ganti isi file **Db.gs, Kode.gs, Layanan.gs, Admin.gs** dengan versi baru (file `.gs` dikirim terpisah). `Dummy.gs`, `Migrasi.gs`, `appsscript.json` tidak berubah.
+> 2. Pilih fungsi **`perbaruiStruktur`** → **Run**. Ini membuat sheet `Banner` & `Galeri` serta folder Drive `Logo`, `Banner`, `Galeri` (aman dijalankan berulang; data lama tidak disentuh). Izinkan akses bila diminta.
+> 3. **Deploy → Manage deployments → ✏️ Edit → Version: _New version_ → Deploy.**
+>    ⚠️ Jangan pilih "New deployment" — URL `/exec` akan berubah dan Anda harus mengganti `GAS_URL` lagi.
+>
+> **2. Perbarui frontend**
+> 1. Ekstrak ZIP, lalu **salin semua file ke folder repo Anda KECUALI `js/config.js`** (file itu sudah berisi URL Anda; di ZIP isinya masih placeholder).
+> 2. Di terminal, dari folder repo: `git add . && git commit -m "Revisi 2: desain baru, banner, galeri" && git push`.
+> 3. Tunggu ±1 menit, buka situs dengan **Ctrl+Shift+R** (atau jendela penyamaran).
+>
+> Setelah itu: **Panel Pengurus → Logo & Identitas / Banner Beranda / Galeri Kegiatan**.
+>
+> ---
+> ### Cara memakai fitur baru
+> - **Logo:** Panel → *Logo & Identitas* → unggah PNG persegi (latar transparan lebih baik) → *Simpan logo*. Muncul di header, footer, panel admin, dan ikon tab.
+> - **Banner beranda:** Panel → *Banner Beranda* → *Unggah banyak foto* (maks. 10 sekali unggah) atau *Tambah banner*. Urutkan dengan tombol panah, sembunyikan sementara dengan *Sembunyikan*, hapus banyak sekaligus dengan checklist. Gunakan foto lanskap 16:9.
+> - **Poster kegiatan:** isi kolom *Poster* saat menambah/mengubah kegiatan. Poster tampil utuh di kartu kegiatan, di *hero* kegiatan pada Beranda & halaman Event, dan bisa diperbesar.
+> - **Galeri:** Panel → *Galeri Kegiatan* → *Unggah foto* → pilih kegiatan → pilih banyak foto sekaligus (maks. 20). Ubah keterangan lewat ikon pensil; hapus banyak dengan checklist.
+> - **Checklist peserta:** Panel → *Peserta* → centang baris (atau centang kotak di kepala tabel untuk semua) → *Aktifkan / Nonaktifkan / Hapus*. **Tambah banyak:** tempel daftar "Nama, HP, Alamat", *Periksa daftar*, centang yang ingin ditambahkan.
+> - Bila **tidak ada banner aktif**, beranda memakai latar zamrud polos dengan motif lengkung (tetap rapi).
+>
+> ---
+
+
 Aplikasi terdiri dari **dua bagian**:
 
 | Bagian | Isi | Tempat |

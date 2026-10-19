@@ -199,7 +199,7 @@
   }
   function guestView(b) {
     var st = b.stat, aktif = b.program.filter(function (g) { return g.status === 'Aktif'; });
-    return '<header class="max-w-3xl"><p class="eyebrow flex items-center gap-2">' + U.star('w-3.5 h-3.5') + 'Dashboard</p><h1 id="h-dash" class="h-section mt-2">Pantau Progres Anda</h1><p class="text-lg text-muted mt-4">Masuk dengan nama & nomor HP untuk melihat riwayat kehadiran, peringkat, dan kelayakan Grand Prize.</p></header>' +
+    return App.pageHead('Pantau progres Anda', 'Masuk dengan nama & nomor HP untuk melihat riwayat kehadiran, peringkat, dan kelayakan Grand Prize.', 'h-dash') +
       '<div class="grid lg:grid-cols-5 gap-6 mt-10"><div class="card p-8 lg:col-span-2 self-start"><div class="w-12 h-12 rounded-2xl bg-brand text-on-brand flex items-center justify-center">' + ic('user-round', 'w-6 h-6') + '</div><h2 class="text-2xl font-semibold mt-4 mb-5">Masuk Peserta</h2>' + verifFormHtml() + '</div>' +
       '<div class="lg:col-span-3 space-y-6"><div class="grid grid-cols-3 gap-4">' + statCard('users', 'Peserta', U.num(st.peserta)) + statCard('calendar-days', 'Kegiatan', U.num(st.kegiatan)) + statCard('trending-up', 'Rata-rata hadir', st.rata + '%') + '</div>' +
       (aktif.length ? aktif.map(function (g) { return '<div class="card p-6 flex items-center gap-4"><div class="w-12 h-12 rounded-2xl gold-banner flex items-center justify-center shrink-0">' + ic('gift', 'w-6 h-6') + '</div><div class="min-w-0"><p class="font-display text-lg font-semibold">' + esc(g.nama) + '</p><p class="text-sm text-muted">Hadir minimal ' + g.min + '× · ' + g.pemenang + ' pemenang</p></div></div>'; }).join('') : '') +

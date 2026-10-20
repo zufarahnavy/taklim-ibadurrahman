@@ -25,10 +25,21 @@
   var TITLES = {}; NAV.forEach(function (n) { TITLES[n.k] = n.l; });
 
   // ---------- Muat modul lanjutan ----------
-  var extraP = null;
+  var extraP = null, EXTRA = ['js/admin-lanjut.js', 'js/admin-media.js', 'js/admin-broadcast.js'], EXTRA_V = '?v=4';
+  /** Muat satu skrip dengan batas waktu; skrip gagal dibuang agar percobaan ulang tidak menumpuk tag. */
+  function loadScript(src, ms) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script'), done = false;
+      function fin(ok) { if (done) return; done = true; clearTimeout(t); s.onload = s.onerror = null; if (ok) res(); else { if (s.parentNode) s.parentNode.removeChild(s); rej(new Error('muat ' + src)); } }
+      var t = setTimeout(function () { fin(false); }, ms);
+      s.onload = function () { fin(true); }; s.onerror = function () { fin(false); };
+      s.src = src + EXTRA_V; document.head.appendChild(s);
+    });
+  }
+  function loadRetry(src, n) { return loadScript(src, 12000).catch(function (e) { if (n > 0) return new Promise(function (r) { setTimeout(r, 600); }).then(function () { return loadRetry(src, n - 1); }); throw e; }); }
   function ensureExtra() {
     if (Admin.extraLoaded) return Promise.resolve();
-    if (!extraP) extraP = Promise.all(['js/admin-lanjut.js?v=3', 'js/admin-media.js?v=3', 'js/admin-broadcast.js?v=3'].map(function (src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); })).then(function () { Admin.extraLoaded = true; }, function () { extraP = null; throw new Error('muat'); });
+    if (!extraP) extraP = Promise.all(EXTRA.map(function (src) { return loadRetry(src, 2); })).then(function () { Admin.extraLoaded = true; }, function (e) { extraP = null; throw e; });
     return extraP;
   }
 
@@ -99,9 +110,26 @@
     var t = $('#adm-title'); if (t) t.textContent = TITLES[A.view] || '';
     dummyBanner();
     var v = Admin.views[A.view];
-    if (v) { main.innerHTML = ''; v(main); return; }
+    main._lazyTok = (main._lazyTok || 0) + 1; main._lazyLoading = null;
+    if (v) { main.innerHTML = ''; try { v(main); } catch (e) { main.innerHTML = '<div class="card p-8 text-center max-w-lg mx-auto"><h2 class="font-display text-xl font-semibold">Tampilan gagal dibuka</h2><p class="text-muted mt-2">Muat ulang halaman jika berulang.</p><button class="btn btn-primary mt-5" onclick="location.reload()">Muat ulang</button></div>'; if (window.console) console.error(e); } return; }
     var nv = NAV.filter(function (n) { return n.k === A.view; })[0];
-    if (nv && nv.lazy) { main.innerHTML = '<div class="space-y-4">' + App.sk(2, 160) + '</div>'; ensureExtra().then(function () { if (Admin.views[A.view]) { main.innerHTML = ''; Admin.views[A.view](main); } }).catch(function () { U.toast('Gagal memuat modul.', 'error'); }); }
+    if (nv && nv.lazy) {
+      if (main._lazyLoading === A.view) return;   // pemuatan modul untuk tampilan ini sedang berjalan: jangan mulai ulang
+      var want = A.view, tok = main._lazyTok = (main._lazyTok || 0) + 1;
+      main._lazyLoading = want;
+      main.innerHTML = '<div class="space-y-4">' + App.sk(2, 160) + '</div>';
+      ensureExtra().then(function () {
+        if (main._lazyTok !== tok) return;
+        main._lazyLoading = null;
+        if (!Admin.views[want]) throw new Error('tampilan tidak ada');
+        main.innerHTML = ''; Admin.views[want](main);
+      }).catch(function (err) {
+        if (main._lazyTok !== tok) return;
+        main._lazyLoading = null;
+        main.innerHTML = '<div class="card p-8 text-center max-w-lg mx-auto"><span class="w-12 h-12 rounded-2xl bg-gold-pale text-gold-ink inline-flex items-center justify-center">' + ic('wifi-off', 'w-6 h-6') + '</span><h2 class="font-display text-xl font-semibold mt-4">Halaman belum bisa dimuat</h2><p class="text-muted mt-2">Koneksi internet sedang lambat atau terputus. Data Anda aman. Coba muat ulang halaman ini.</p><button class="btn btn-primary mt-5" data-act="muat-ulang">' + ic('refresh-cw', 'w-4 h-4') + ' Muat ulang</button></div>';
+        var b = main.querySelector('[data-act="muat-ulang"]'); if (b) b.addEventListener('click', function () { main._lazyLoading = null; renderView(); });
+      });
+    }
   }
   /** Segarkan tampilan hanya bila admin tidak sedang mengetik (agar isian formulir tidak hilang saat data latar tersinkron). */
   Admin.h.render = function () {
@@ -186,8 +214,11 @@
     });
   }
   Admin.h.deleteEntity = deleteEntity;
+  var bootBusy = false;
   function refreshBoot(quiet) {
-    return req('adminBoot').then(function (r) {
+    if (bootBusy) return Promise.resolve(null);   // satu permintaan latar dalam satu waktu
+    bootBusy = true;
+    return req('adminBoot', {}, { timeout: 20000, retries: 1 }).then(function (r) { bootBusy = false; return r; }, function (e) { bootBusy = false; throw e; }).then(function (r) {
       if (!r.success) { if (!quiet) U.toast(r.message, 'error'); return; }
       var changed = JSON.stringify(r.data) !== A.lastJson; A.lastJson = JSON.stringify(r.data);
       A.boot = r.data; if (changed) Admin.h.render(); return r;

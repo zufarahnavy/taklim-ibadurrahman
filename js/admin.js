@@ -236,15 +236,15 @@
   }
   Admin.views.peserta = function (main) {
     function draw() {
-      var q = qPes.toLowerCase(), rows = list('peserta').filter(function (p) { return !q || (p.Nama + ' ' + p.No_HP + ' ' + p.Alamat + ' ' + p.Kode).toLowerCase().indexOf(q) >= 0; });
+      var q = qPes.toLowerCase(), rows = list('peserta').filter(function (p) { return !q || (p.Nama + ' ' + p.No_HP + ' ' + p.Alamat + ' ' + p.Kode + ' ' + (p.Jenis_Kelamin || '')).toLowerCase().indexOf(q) >= 0; });
       var exist = {}; list('peserta').forEach(function (p) { exist[p.ID] = 1; }); Object.keys(selPes).forEach(function (k) { if (!exist[k]) delete selPes[k]; });
       main.innerHTML = pageHead('Peserta', U.num(list('peserta').length) + ' peserta terdaftar', '<button class="btn btn-gold btn-sm" data-view="migrasi">' + ic('upload', 'w-4 h-4') + ' Impor file</button><button class="btn btn-gold btn-sm" data-bulk-add>' + ic('list-plus', 'w-4 h-4') + ' Tambah banyak</button><button class="btn btn-primary btn-sm" data-add="peserta">' + ic('plus', 'w-4 h-4') + ' Tambah peserta</button>') +
         '<div class="mb-4">' + searchBox('q-pes', 'Cari nama / ID / HP / alamat…', qPes) + '</div><div id="pes-bar">' + pesBar() + '</div>' +
-        tableWrap('<table class="tbl"><thead><tr><th class="w-12"><input type="checkbox" id="sel-all" aria-label="Pilih semua peserta yang tampil"></th><th>ID</th><th>Nama</th><th>No. HP</th><th class="hidden md:table-cell">Alamat</th><th>Hadir</th><th>Status</th><th class="text-right">Aksi</th></tr></thead><tbody>' +
+        tableWrap('<table class="tbl"><thead><tr><th class="w-12"><input type="checkbox" id="sel-all" aria-label="Pilih semua peserta yang tampil"></th><th>ID</th><th>Nama</th><th>JK</th><th>No. HP</th><th class="hidden md:table-cell">Alamat</th><th>Hadir</th><th>Status</th><th class="text-right">Aksi</th></tr></thead><tbody>' +
           (rows.length ? rows.slice(0, 300).map(function (p) {
-            return '<tr><td><input type="checkbox" data-sel="' + esc(p.ID) + '" aria-label="Pilih ' + esc(p.Nama) + '"' + (selPes[p.ID] ? ' checked' : '') + '></td><td class="whitespace-nowrap font-mono text-xs font-semibold text-gold-ink">' + esc(p.Kode || '…') + '</td><td><div class="flex items-center gap-3 min-w-[180px]">' + U.avatar(p.Nama, p.Foto_URL, 'w-9 h-9 text-xs') + '<span class="font-medium">' + esc(p.Nama) + (p.Is_Dummy === 'TRUE' ? ' <span class="badge badge-off ml-1">dummy</span>' : '') + '</span></div></td><td class="whitespace-nowrap">' + esc(p.No_HP) + '</td><td class="hidden md:table-cell text-muted">' + esc(p.Alamat) + '</td><td>' + (p.jumlahHadir || 0) + '×</td>' +
+            return '<tr><td><input type="checkbox" data-sel="' + esc(p.ID) + '" aria-label="Pilih ' + esc(p.Nama) + '"' + (selPes[p.ID] ? ' checked' : '') + '></td><td class="whitespace-nowrap font-mono text-xs font-semibold text-gold-ink">' + esc(p.Kode || '…') + '</td><td><div class="flex items-center gap-3 min-w-[180px]">' + U.avatar(p.Nama, p.Foto_URL, 'w-9 h-9 text-xs') + '<span class="font-medium">' + esc(p.Nama) + (p.Is_Dummy === 'TRUE' ? ' <span class="badge badge-off ml-1">dummy</span>' : '') + '</span></div></td><td>' + (p.Jenis_Kelamin ? '<span class="badge badge-off" title="' + esc(p.Jenis_Kelamin) + '">' + (p.Jenis_Kelamin === 'Perempuan' ? 'P' : 'L') + '</span>' : '<span class="text-muted" title="Belum diisi">–</span>') + '</td><td class="whitespace-nowrap">' + esc(p.No_HP) + '</td><td class="hidden md:table-cell text-muted">' + esc(p.Alamat) + '</td><td>' + (p.jumlahHadir || 0) + '×</td>' +
               '<td><button class="badge ' + (p.Status === 'Aktif' ? 'badge-ok' : 'badge-off') + '" data-pstatus="' + esc(p.ID) + '" aria-label="Ubah status ' + esc(p.Nama) + '">' + esc(p.Status) + '</button></td>' +
-              '<td class="text-right whitespace-nowrap"><button class="btn btn-ghost btn-sm btn-icon" data-edit="peserta" data-id="' + esc(p.ID) + '" aria-label="Ubah ' + esc(p.Nama) + '">' + ic('pencil', 'w-4 h-4') + '</button><button class="btn btn-ghost btn-sm btn-icon text-danger" data-del="peserta" data-id="' + esc(p.ID) + '" data-label="' + esc(p.Nama) + '" aria-label="Hapus ' + esc(p.Nama) + '">' + ic('trash-2', 'w-4 h-4') + '</button></td></tr>'; }).join('') : '<tr><td colspan="8" class="text-center text-muted py-10">Tidak ada peserta.</td></tr>') + '</tbody></table>') +
+              '<td class="text-right whitespace-nowrap"><button class="btn btn-ghost btn-sm btn-icon" data-edit="peserta" data-id="' + esc(p.ID) + '" aria-label="Ubah ' + esc(p.Nama) + '">' + ic('pencil', 'w-4 h-4') + '</button><button class="btn btn-ghost btn-sm btn-icon text-danger" data-del="peserta" data-id="' + esc(p.ID) + '" data-label="' + esc(p.Nama) + '" aria-label="Hapus ' + esc(p.Nama) + '">' + ic('trash-2', 'w-4 h-4') + '</button></td></tr>'; }).join('') : '<tr><td colspan="9" class="text-center text-muted py-10">Tidak ada peserta.</td></tr>') + '</tbody></table>') +
         (rows.length > 300 ? '<p class="text-xs text-muted mt-3">Menampilkan 300 teratas — gunakan pencarian untuk mempersempit.</p>' : '');
       bindSearch('q-pes', function (v) { qPes = v; draw(); var n = $('#q-pes'); n.focus(); n.setSelectionRange(v.length, v.length); });
       syncSel();
@@ -273,14 +273,15 @@
   /** Tambah banyak: tempel daftar → periksa di sisi klien → centang yang akan ditambahkan. */
   function openBulkAdd() {
     var parsed = [];
-    var m = U.modal(U.modalHead('Tambah banyak peserta', 'Tempel satu peserta per baris: Nama, No. HP, Alamat') + '<div class="px-6 pb-6"><label class="label" for="ba-t">Daftar peserta</label><textarea class="field" id="ba-t" rows="6" placeholder="Siti Aminah, 081234567890, Waru&#10;Budi Santoso; 085611112222; Gedangan"></textarea><p class="hint">Pemisah boleh koma, titik koma, atau tab. Dari Excel/Sheets: salin kolom Nama, HP, Alamat lalu tempel.</p>' +
+    var m = U.modal(U.modalHead('Tambah banyak peserta', 'Tempel satu peserta per baris: Nama, No. HP, L/P (opsional), Alamat') + '<div class="px-6 pb-6"><label class="label" for="ba-t">Daftar peserta</label><textarea class="field" id="ba-t" rows="6" placeholder="Siti Aminah, 081234567890, P, Waru&#10;Budi Santoso; 085611112222; L; Gedangan"></textarea><p class="hint">Pemisah boleh koma, titik koma, atau tab. Dari Excel/Sheets: salin kolom Nama, HP, Alamat lalu tempel.</p>' +
       '<div class="flex gap-2 mt-3"><button class="btn btn-gold btn-sm" id="ba-check">' + ic('list-checks', 'w-4 h-4') + ' Periksa daftar</button></div><div id="ba-res" class="mt-4"></div></div>', { label: 'Tambah banyak peserta', wide: true });
     function check() {
       var seen = {}; list('peserta').forEach(function (p) { seen[p.No_HP] = 1; });
       parsed = $('#ba-t', m.el).value.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 500).map(function (l, i) {
         var c = l.split(/\t|;|,/).map(function (x) { return x.trim(); }), nama = c[0] || '', hp = U.normHp(c[1] || ''), why = '';
         if (nama.length < 3) why = 'Nama terlalu pendek'; else if (!U.validHp(hp)) why = 'No. HP tidak valid'; else if (seen[hp]) why = 'No. HP sudah terdaftar / ganda'; else seen[hp] = 1;
-        return { i: i, line: l, nama: nama, hp: hp, alamat: c.slice(2).join(', '), why: why };
+        var jkTok = c.length >= 3 && /^(l|p|lk|pr|laki-?laki|perempuan|pria|wanita)$/i.test(c[2]) ? c[2] : '';
+        return { i: i, line: l, nama: nama, hp: hp, jk: jkTok, alamat: c.slice(jkTok ? 3 : 2).join(', '), why: why };
       });
       draw();
     }
@@ -304,7 +305,7 @@
       if (e.target.closest('#ba-go')) {
         var rows = picked(), btn = $('#ba-go', m.el); if (!rows.length) return;
         U.busy(btn, true, 'Menambahkan…');
-        req('pesertaImport', { teks: rows.map(function (r) { return [r.nama, r.hp, r.alamat].join(', '); }).join('\n'), jalankan: true, mode: 'tambah' }, { timeout: 60000 }).then(function (r) {
+        req('pesertaImport', { teks: rows.map(function (r) { return (r.jk ? [r.nama, r.hp, r.jk, r.alamat] : [r.nama, r.hp, r.alamat]).join(', '); }).join('\n'), jalankan: true, mode: 'tambah' }, { timeout: 60000 }).then(function (r) {
           U.busy(btn, false); if (!r.success) return U.toast(r.message, 'error');
           U.toast(r.data.baru + ' peserta ditambahkan', 'ok'); m.close(); refreshBoot(true); afterChange();
         });
@@ -314,7 +315,7 @@
 
   // ---------- Konfigurasi CRUD sederhana ----------
   var CRUD = {
-    peserta: { title: 'Peserta', fields: function () { return [{ k: 'Nama', l: 'Nama lengkap', req: 1, half: 1, max: 80 }, { k: 'No_HP', l: 'No. HP', req: 1, half: 1, max: 20, type: 'tel', hint: 'Format 08xx atau 62xx' }, { k: 'Alamat', l: 'Alamat', type: 'textarea', rows: 2, max: 250 }, { k: 'Foto_URL', l: 'Foto', type: 'image', folder: 'Foto_Peserta' }, { k: 'Status', l: 'Status', type: 'select', opts: [{ v: 'Aktif', l: 'Aktif' }, { v: 'Nonaktif', l: 'Nonaktif' }] }]; } },
+    peserta: { title: 'Peserta', fields: function () { return [{ k: 'Nama', l: 'Nama lengkap', req: 1, half: 1, max: 80 }, { k: 'No_HP', l: 'No. HP', req: 1, half: 1, max: 20, type: 'tel', hint: 'Format 08xx atau 62xx' }, { k: 'Jenis_Kelamin', l: 'Jenis kelamin', type: 'select', opts: [{ v: '', l: '— Belum diisi —' }, { v: 'Laki-laki', l: 'Laki-laki' }, { v: 'Perempuan', l: 'Perempuan' }] }, { k: 'Alamat', l: 'Alamat', type: 'textarea', rows: 2, max: 250 }, { k: 'Foto_URL', l: 'Foto', type: 'image', folder: 'Foto_Peserta' }, { k: 'Status', l: 'Status', type: 'select', opts: [{ v: 'Aktif', l: 'Aktif' }, { v: 'Nonaktif', l: 'Nonaktif' }] }]; } },
     kegiatan: { title: 'Kegiatan', fields: function () { return [{ k: 'Judul', l: 'Judul kegiatan', req: 1, max: 150 }, { k: 'Tanggal', l: 'Tanggal', type: 'date', req: 1, half: 1 }, { k: 'Jam', l: 'Jam (mis. 05.30)', half: 1, max: 20 }, { k: 'Lokasi', l: 'Lokasi', max: 150 }, { k: 'Narasumber_ID', l: 'Narasumber', type: 'select', opts: narOptions(), half: 1 }, { k: 'Kategori', l: 'Kategori / jenis kegiatan', max: 40, half: 1, list: kategoriKegiatan(), hint: 'Samakan untuk kegiatan rutin (mis. Kajian Rutin).' }, { k: 'Deskripsi', l: 'Deskripsi', type: 'textarea' }, { k: 'Poster_URL', l: 'Poster', type: 'image', folder: 'Poster_Event' }, { k: 'Status_Absensi', l: 'Status absensi', type: 'select', opts: [{ v: 'Ditutup', l: 'Ditutup' }, { v: 'Dibuka', l: 'Dibuka' }] }]; } },
     narasumber: { title: 'Narasumber', fields: function () { return [{ k: 'Nama', l: 'Nama', req: 1, half: 1, max: 100 }, { k: 'Gelar', l: 'Gelar', half: 1, max: 100 }, { k: 'Keahlian', l: 'Keahlian (pisahkan koma)', max: 200 }, { k: 'Bio', l: 'Biografi singkat', type: 'textarea', max: 1500 }, { k: 'Foto_URL', l: 'Foto', type: 'image', folder: 'Foto_Narasumber' }]; } },
     berita: { title: 'Berita', fields: function () { return [{ k: 'Judul', l: 'Judul', req: 1, max: 150 }, { k: 'Tanggal', l: 'Tanggal', type: 'date', req: 1, half: 1 }, { k: 'Kategori', l: 'Kategori', half: 1, max: 40 }, { k: 'Ringkasan', l: 'Ringkasan', type: 'textarea', rows: 2, max: 300 }, { k: 'Isi', l: 'Isi berita', type: 'textarea', rows: 8, max: 8000 }, { k: 'Gambar_URL', l: 'Gambar', type: 'image', folder: 'Gambar_Berita' }]; } },

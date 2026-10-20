@@ -15,6 +15,12 @@
   function field(id, label, input, hint) { return '<div><label class="label" for="' + id + '">' + esc(label) + '</label>' + input + (hint ? '<p class="hint">' + esc(hint) + '</p>' : '') + '</div>'; }
   var NAMA_IN = function (v) { return '<input class="field" id="f-nama" name="nama" type="text" autocomplete="name" required minlength="3" maxlength="80" placeholder="Nama lengkap sesuai pendaftaran" value="' + esc(v || '') + '">'; };
   var HP_IN = function (v) { return '<input class="field" id="f-hp" name="hp" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" placeholder="08xxxxxxxxxx" value="' + esc(v || '') + '">'; };
+  /** Pilihan jenis kelamin (radio bergaya chip) — name="jk". */
+  function jkField(v, req) {
+    return '<fieldset><legend class="label">Jenis kelamin' + (req ? ' <span class="text-danger" aria-hidden="true">*</span>' : '') + '</legend><div class="grid grid-cols-2 gap-3">' +
+      ['Laki-laki', 'Perempuan'].map(function (x) { return '<label class="cursor-pointer"><input type="radio" name="jk" value="' + x + '" class="sr-only chip-radio"' + (v === x ? ' checked' : '') + (req ? ' required' : '') + '><span class="block rounded-2xl border border-line px-4 py-3 text-center font-medium">' + x + '</span></label>'; }).join('') +
+      '</div><p class="err hidden" id="jk-err" role="alert">Pilih jenis kelamin.</p></fieldset>';
+  }
   var IDHP_IN = function (v, id) { return '<input class="field" id="' + (id || 'f-idhp') + '" name="idhp" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required maxlength="24" placeholder="MTI-2026-001 atau 08xxxxxxxxxx" value="' + esc(v || '') + '">'; };
   var IDHP_HINT = 'Isi ID Peserta Anda (mis. MTI-2026-001) atau nomor HP yang didaftarkan.';
   function okIdHp(v) { v = String(v || '').trim(); return /^MTI[\s\-_.]*\d{4}[\s\-_.]*\d{1,5}$/i.test(v) || U.validHp(v); }
@@ -22,6 +28,7 @@
     return kode ? '<div class="mt-5 rounded-2xl border border-gold bg-gold-pale/50 px-5 py-4 text-center"><p class="text-sm text-muted">ID Peserta Anda</p><p class="font-display text-3xl font-semibold tracking-wide mt-1" id="kode-teks">' + esc(kode) + '</p>' +
       '<button type="button" class="btn btn-line btn-sm mt-3" data-copy="' + esc(kode) + '">' + ic('copy', 'w-4 h-4') + ' Salin ID</button><p class="text-xs text-muted mt-3">Simpan ID ini. Anda bisa masuk dan mengisi kehadiran cukup dengan ID atau nomor HP.</p></div>' : '';
   }
+  document.addEventListener('change', function (e) { if (e.target.name === 'jk') { var er = document.getElementById('jk-err'); if (er) er.classList.add('hidden'); } });
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-copy]'); if (!b) return;
     var v = b.dataset.copy; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function () { U.toast('ID disalin: ' + v, 'ok'); }, function () { U.toast('Salin manual: ' + v); });
@@ -36,6 +43,7 @@
     warmUp();
     var m = U.modal(U.modalHead('Daftar Peserta', 'Cukup nama & nomor HP. Anda akan mendapat ID Peserta pribadi.') +
       '<form class="px-6 pb-6 space-y-4" novalidate>' + field('f-nama', 'Nama lengkap', NAMA_IN()) + field('f-hp', 'Nomor HP / WhatsApp', HP_IN(), 'Bisa dipakai untuk masuk dan absen. Contoh: 081234567890') +
+      jkField('', true) +
       field('f-alamat', 'Alamat (opsional)', '<textarea class="field" id="f-alamat" name="alamat" rows="2" maxlength="250" placeholder="Kecamatan / kota"></textarea>') +
       field('f-foto', 'Foto (opsional)', '<input class="field !pt-2.5" id="f-foto" name="foto" type="file" accept="image/*">') +
       '<div class="flex gap-3 justify-end pt-2"><button type="button" class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" type="submit">Daftar</button></div></form>', { label: 'Daftar peserta' });
@@ -44,10 +52,11 @@
       e.preventDefault(); var d = U.formData(form), btn = $('[type=submit]', form);
       if (d.nama.trim().length < 3) return U.fieldErr(form, 'nama', 'Nama minimal 3 karakter.');
       if (!U.validHp(d.hp)) return U.fieldErr(form, 'hp', 'Nomor HP tidak valid. Contoh: 081234567890.');
+      if (!d.jk) { $('#jk-err', form).classList.remove('hidden'); return form.querySelector('[name=jk]').focus(); }
       U.busy(btn, true, 'Mendaftarkan…');
       var file = $('#f-foto', form).files[0];
       U.imageToB64(file, 640).catch(function () { return null; }).then(function (foto) {
-        return api('daftar', { nama: d.nama, hp: d.hp, alamat: d.alamat, foto: foto }, { role: 'peserta', noToken: true });
+        return api('daftar', { nama: d.nama, hp: d.hp, jk: d.jk, alamat: d.alamat, foto: foto }, { role: 'peserta', noToken: true });
       }).then(function (r) {
         U.busy(btn, false);
         if (!r.success) return U.toast(r.message, 'error');
@@ -121,7 +130,7 @@
     var me = App.me(); if (!me) return openVerif(openDataDiri);
     var m = U.modal(U.modalHead('Data Diri', 'Hanya Anda dan pengurus yang dapat melihat data ini.') +
       '<form class="px-6 pb-6 space-y-4" novalidate><div class="flex items-center gap-4">' + U.avatar(me.nama, me.foto, 'w-16 h-16 text-xl') + '<div class="min-w-0"><p class="font-semibold truncate">' + esc(me.nama) + '</p><p class="text-sm font-semibold text-gold-ink">' + esc(me.kode || '') + '</p><p class="text-sm text-muted">' + esc(me.hp) + ' · terdaftar ' + U.fmtTgl(me.daftar) + '</p></div></div>' +
-      field('f-nama', 'Nama lengkap', NAMA_IN(me.nama)) + field('f-alamat', 'Alamat', '<textarea class="field" id="f-alamat" name="alamat" rows="2" maxlength="250">' + esc(me.alamat || '') + '</textarea>') +
+      field('f-nama', 'Nama lengkap', NAMA_IN(me.nama)) + jkField(me.jk || '', false) + (me.jk ? '' : '<p class="hint -mt-2">Jenis kelamin Anda belum tercatat. Mohon lengkapi.</p>') + field('f-alamat', 'Alamat', '<textarea class="field" id="f-alamat" name="alamat" rows="2" maxlength="250">' + esc(me.alamat || '') + '</textarea>') +
       field('f-foto', 'Ganti foto', '<input class="field !pt-2.5" id="f-foto" type="file" accept="image/*">') +
       '<p class="hint">Nomor HP tidak dapat diubah sendiri. Hubungi pengurus bila perlu mengganti nomor.</p>' +
       '<div class="flex gap-3 justify-between pt-2"><button type="button" class="btn btn-danger btn-sm" data-close data-act="logout-peserta">' + ic('log-out', 'w-4 h-4') + ' Keluar</button><div class="flex gap-3"><button type="button" class="btn btn-ghost" data-close>Tutup</button><button class="btn btn-primary" type="submit">Simpan</button></div></div></form>', { label: 'Data diri' });
@@ -131,7 +140,7 @@
       if (d.nama.trim().length < 3) return U.fieldErr(form, 'nama', 'Nama minimal 3 karakter.');
       U.busy(btn, true, 'Menyimpan…');
       U.imageToB64($('#f-foto', form).files[0], 640).catch(function () { return null; }).then(function (foto) {
-        var p = { nama: d.nama, alamat: d.alamat }; if (foto) p.foto = foto;
+        var p = { nama: d.nama, alamat: d.alamat }; if (d.jk) p.jk = d.jk; if (foto) p.foto = foto;
         return api('dataDiriSimpan', p, { role: 'peserta' });
       }).then(function (r) {
         U.busy(btn, false); if (!r.success) return U.toast(r.message, 'error');

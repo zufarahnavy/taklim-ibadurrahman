@@ -381,25 +381,57 @@
   // ---------- Absensi manual ----------
   function openKehadiran(kid) {
     var kg = list('kegiatan').filter(function (k) { return k.ID === kid; })[0]; if (!kg) return;
-    var data = null, q = '';
-    var m = U.modal(U.modalHead('Kehadiran: ' + kg.Judul, U.fmtTglPanjang(kg.Tanggal)) + '<div class="px-6 pb-6"><div class="flex flex-wrap gap-3 items-center justify-between mb-4"><div class="flex-1 min-w-[200px]">' + searchBox('q-kh', 'Cari peserta…') + '</div><span class="badge" id="kh-count">…</span></div><div id="kh-body" class="rounded-2xl border border-line max-h-[50vh] overflow-y-auto">' + App.sk(1, 200) + '</div>' +
-      '<div class="flex gap-3 justify-between mt-4"><button class="btn btn-gold btn-sm" id="kh-all">' + ic('check', 'w-4 h-4') + ' Hadirkan semua hasil pencarian</button><button class="btn btn-ghost" data-close>Selesai</button></div></div>', { label: 'Kehadiran manual', wide: true, onClose: function () { refreshBoot(true); } });
+    if (modalOpen()) return;                                       // cegah modal ganda dari klik beruntun
+    var data = null, q = '', filt = 'semua', working = {};           // working: pid -> true saat permintaan berjalan (cegah klik ganda)
+    var m = U.modal(U.modalHead('Kehadiran: ' + kg.Judul, U.fmtTglPanjang(kg.Tanggal)) + '<div class="px-6 pb-6"><div class="flex flex-wrap gap-3 items-center justify-between mb-3"><div class="flex-1 min-w-[200px]">' + searchBox('q-kh', 'Cari peserta…') + '</div><span class="badge" id="kh-count">…</span></div>' +
+      '<div class="flex flex-wrap gap-2 mb-3" role="group" aria-label="Saring daftar">' + [['semua', 'Semua'], ['hadir', 'Sudah hadir'], ['belum', 'Belum hadir']].map(function (f) { return '<button type="button" class="badge cursor-pointer" data-kf="' + f[0] + '">' + f[1] + '</button>'; }).join('') + '</div>' +
+      '<div id="kh-body" class="rounded-2xl border border-line max-h-[50vh] overflow-y-auto">' + App.sk(1, 200) + '</div>' +
+      '<div class="flex flex-wrap gap-3 justify-between mt-4"><button class="btn btn-gold btn-sm" id="kh-all">' + ic('check', 'w-4 h-4') + ' Hadirkan semua yang belum</button><button class="btn btn-ghost" data-close>Selesai</button></div><p class="hint mt-2">Setiap peserta hanya dicatat satu kali per kegiatan. Gunakan tombol <strong>Hapus</strong> untuk membatalkan kehadiran.</p></div>', { label: 'Kehadiran manual', wide: true, onClose: function () { refreshBoot(true); } });
+    function match(r) { return !q || (r.nama + ' ' + r.hp).toLowerCase().indexOf(q) >= 0; }
+    function shown() { return data.rows.filter(function (r) { return match(r) && (filt === 'semua' || (filt === 'hadir') === !!r.hadir); }); }
     function draw() {
-      var rows = data.rows.filter(function (r) { return !q || (r.nama + r.hp).toLowerCase().indexOf(q) >= 0; });
-      $('#kh-count', m.el).textContent = data.rows.filter(function (r) { return r.hadir; }).length + ' / ' + data.rows.length + ' hadir';
-      $('#kh-body', m.el).innerHTML = rows.length ? '<ul class="divide-y divide-line">' + rows.map(function (r) {
-        return '<li><label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-surface-2"><input type="checkbox" data-pid="' + esc(r.pid) + '"' + (r.hadir ? ' checked' : '') + '><span class="flex-1 min-w-0"><span class="font-medium block truncate">' + esc(r.nama) + '</span><span class="text-xs text-muted">' + esc(r.hp) + (r.hadir ? ' · ' + (r.metode || '') : '') + '</span></span>' + (r.status !== 'Aktif' ? '<span class="badge badge-off">Nonaktif</span>' : '') + '</label></li>'; }).join('') + '</ul>' : '<p class="p-8 text-center text-muted text-sm">Tidak ada peserta.</p>';
+      var rows = shown(), hadirN = data.rows.filter(function (r) { return r.hadir; }).length;
+      $('#kh-count', m.el).textContent = hadirN + ' / ' + data.rows.length + ' hadir';
+      $$('[data-kf]', m.el).forEach(function (b) { var on = b.dataset.kf === filt; b.className = 'badge cursor-pointer ' + (on ? 'badge-ok' : 'badge-off'); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      var body = $('#kh-body', m.el), top = body.scrollTop;
+      body.innerHTML = rows.length ? '<ul class="divide-y divide-line">' + rows.map(function (r) {
+        var w = !!working[r.pid];
+        return '<li class="flex items-center gap-3 px-4 py-3"><span class="flex-1 min-w-0"><span class="font-medium block truncate">' + esc(r.nama) + '</span><span class="text-xs text-muted">' + esc(r.hp) + (r.hadir ? ' · ' + esc(r.metode || '') + (r.waktu ? ' · ' + esc(String(r.waktu).replace('T', ' ').slice(0, 16)) : '') : '') + '</span></span>' + (r.status !== 'Aktif' ? '<span class="badge badge-off">Nonaktif</span>' : '') +
+          (r.hadir ? '<span class="badge badge-ok">' + ic('check', 'w-3.5 h-3.5') + ' Hadir</span><button type="button" class="btn btn-ghost btn-sm text-danger" data-khdel="' + esc(r.pid) + '"' + (w ? ' disabled' : '') + ' aria-label="Hapus kehadiran ' + esc(r.nama) + '">' + ic('trash-2', 'w-4 h-4') + ' Hapus</button>'
+                   : '<button type="button" class="btn btn-gold btn-sm" data-khadd="' + esc(r.pid) + '"' + (w ? ' disabled' : '') + ' aria-label="Hadirkan ' + esc(r.nama) + '">' + ic('check', 'w-4 h-4') + ' Hadirkan</button>') + '</li>'; }).join('') + '</ul>'
+        : '<p class="p-6 text-center text-muted text-sm">Tidak ada peserta yang cocok.</p>';
+      body.scrollTop = top;
+      var todo = data.rows.filter(function (r) { return !r.hadir && r.status === 'Aktif' && match(r); }).length, all = $('#kh-all', m.el); all.disabled = !todo;
     }
-    req('kehadiranList', { kegiatanId: kid }).then(function (r) { if (!r.success) return U.toast(r.message, 'error'); data = r.data; draw(); });
+    req('kehadiranList', { kegiatanId: kid }).then(function (r) { if (!r.success) { U.toast(r.message, 'error'); return m.close(); } data = r.data; draw(); });
     $('#q-kh', m.el).addEventListener('input', U.debounce(function (e) { q = e.target.value.toLowerCase(); if (data) draw(); }, 100));
-    function set(ids, hadir) {
-      ids.forEach(function (id) { var r = data.rows.filter(function (x) { return x.pid === id; })[0]; if (r) { r.hadir = hadir; r.metode = hadir ? 'Manual' : ''; } }); draw();
-      req('kehadiranSet', { kegiatanId: kid, pesertaIds: ids, hadir: hadir }).then(function (x) { if (!x.success) { U.toast(x.message, 'error'); ids.forEach(function (id) { var r = data.rows.filter(function (y) { return y.pid === id; })[0]; if (r) r.hadir = !hadir; }); draw(); } });
+    /** Kirim perubahan; tampilan diperbarui dari JAWABAN server (bukan tebakan), sehingga tidak bisa tercatat dua kali. */
+    function apply(ids, hadir) {
+      ids = ids.filter(function (id) { return !working[id]; }); if (!ids.length) return;
+      ids.forEach(function (id) { working[id] = true; }); draw();
+      req('kehadiranSet', { kegiatanId: kid, pesertaIds: ids, hadir: hadir }, { timeout: 60000 }).then(function (x) {
+        ids.forEach(function (id) { delete working[id]; });
+        if (!x.success) { U.toast(x.message, 'error'); return draw(); }
+        var now = new Date().toISOString().slice(0, 19);
+        ids.forEach(function (id) { var r = data.rows.filter(function (y) { return y.pid === id; })[0]; if (r) { r.hadir = hadir; r.metode = hadir ? 'Manual' : ''; r.waktu = hadir ? now : ''; } });
+        draw();
+        if (hadir && x.data.sudah) U.toast(x.data.sudah + ' peserta sudah tercatat hadir sebelumnya.');
+        else U.toast(hadir ? (ids.length > 1 ? ids.length + ' peserta ditandai hadir' : 'Kehadiran dicatat') : 'Kehadiran dihapus', 'ok');
+      });
     }
-    m.el.addEventListener('change', function (e) { if (e.target.dataset.pid) set([e.target.dataset.pid], e.target.checked); });
-    $('#kh-all', m.el).addEventListener('click', function () {
-      var ids = data.rows.filter(function (r) { return !r.hadir && r.status === 'Aktif' && (!q || (r.nama + r.hp).toLowerCase().indexOf(q) >= 0); }).map(function (r) { return r.pid; });
-      if (!ids.length) return U.toast('Tidak ada yang perlu ditandai.'); set(ids.slice(0, 500), true); U.toast(ids.length + ' peserta ditandai hadir', 'ok');
+    m.el.addEventListener('click', function (e) {
+      var b;
+      if ((b = e.target.closest('[data-khadd]'))) return apply([b.dataset.khadd], true);
+      if ((b = e.target.closest('[data-khdel]'))) {
+        var r = data.rows.filter(function (y) { return y.pid === b.dataset.khdel; })[0]; if (!r) return;
+        return U.confirm('Hapus kehadiran?', 'Kehadiran ' + r.nama + ' pada kegiatan ini akan dihapus.', 'Hapus', true).then(function (okk) { if (okk) apply([r.pid], false); });
+      }
+      if ((b = e.target.closest('[data-kf]'))) { filt = b.dataset.kf; return draw(); }
+      if (e.target.closest('#kh-all')) {
+        var ids = data.rows.filter(function (r) { return !r.hadir && r.status === 'Aktif' && match(r); }).map(function (r) { return r.pid; });
+        if (!ids.length) return U.toast('Tidak ada yang perlu ditandai.');
+        U.confirm('Hadirkan semua?', ids.length + ' peserta aktif akan ditandai hadir.', 'Hadirkan').then(function (okk) { if (okk) apply(ids.slice(0, 500), true); });
+      }
     });
   }
   Admin.h.openKehadiran = openKehadiran;

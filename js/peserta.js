@@ -1,6 +1,6 @@
 /**
  * peserta.js — Alur peserta: Daftar, Isi Kehadiran, Verifikasi, Data Diri, Formulir, dan Dashboard pribadi.
- * Identitas peserta: ID Peserta (MTI-2026-001) ATAU No. HP (tanpa kata sandi). Sesi 12 jam disimpan di perangkat ini.
+ * Identitas peserta: ID Peserta (MTI26001) ATAU No. HP (tanpa kata sandi). Sesi 12 jam disimpan di perangkat ini.
  */
 (function () {
   'use strict';
@@ -21,9 +21,9 @@
       ['Laki-laki', 'Perempuan'].map(function (x) { return '<label class="cursor-pointer"><input type="radio" name="jk" value="' + x + '" class="sr-only chip-radio"' + (v === x ? ' checked' : '') + (req ? ' required' : '') + '><span class="block rounded-2xl border border-line px-4 py-3 text-center font-medium">' + x + '</span></label>'; }).join('') +
       '</div><p class="err hidden" id="jk-err" role="alert">Pilih jenis kelamin.</p></fieldset>';
   }
-  var IDHP_IN = function (v, id) { return '<input class="field" id="' + (id || 'f-idhp') + '" name="idhp" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required maxlength="24" placeholder="MTI-2026-001 atau 08xxxxxxxxxx" value="' + esc(v || '') + '">'; };
-  var IDHP_HINT = 'Isi ID Peserta Anda (mis. MTI-2026-001) atau nomor HP yang didaftarkan.';
-  function okIdHp(v) { v = String(v || '').trim(); return /^MTI[\s\-_.]*\d{4}[\s\-_.]*\d{1,5}$/i.test(v) || U.validHp(v); }
+  var IDHP_IN = function (v, id) { return '<input class="field" id="' + (id || 'f-idhp') + '" name="idhp" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" required maxlength="24" placeholder="MTI26001 atau 08xxxxxxxxxx" value="' + esc(v || '') + '">'; };
+  var IDHP_HINT = 'Isi ID Peserta Anda (mis. MTI26001) atau nomor HP yang didaftarkan.';
+  function okIdHp(v) { v = String(v || '').trim(); return /^MTI[\s\-_.]*\d{2,4}[\s\-_.]*\d{1,5}$/i.test(v) || U.validHp(v); }
   function idCard(kode) {
     return kode ? '<div class="mt-5 rounded-2xl border border-gold bg-gold-pale/50 px-5 py-4 text-center"><p class="text-sm text-muted">ID Peserta Anda</p><p class="font-display text-3xl font-semibold tracking-wide mt-1" id="kode-teks">' + esc(kode) + '</p>' +
       '<button type="button" class="btn btn-line btn-sm mt-3" data-copy="' + esc(kode) + '">' + ic('copy', 'w-4 h-4') + ' Salin ID</button><p class="text-xs text-muted mt-3">Simpan ID ini. Anda bisa masuk dan mengisi kehadiran cukup dengan ID atau nomor HP.</p></div>' : '';
@@ -89,7 +89,7 @@
     form.addEventListener('submit', function (e) {
       e.preventDefault(); var d = U.formData(form), btn = $('[type=submit]', form), er = $('#absen-err', form);
       er.classList.add('hidden');
-      if (!okIdHp(d.idhp)) return U.fieldErr(form, 'idhp', 'Isi ID Peserta (MTI-2026-001) atau nomor HP yang valid.');
+      if (!okIdHp(d.idhp)) return U.fieldErr(form, 'idhp', 'Isi ID Peserta (MTI26001) atau nomor HP yang valid.');
       U.busy(btn, true, 'Mencatat…');
       api('absen', { idhp: d.idhp.trim(), kegiatanId: d.kegiatanId }, { role: 'peserta', noToken: true }).then(function (r) {
         U.busy(btn, false);
@@ -111,7 +111,7 @@
   }
   function submitVerif(form, after) {
     var d = U.formData(form), btn = $('[type=submit]', form), er = $('[data-err]', form); er.classList.add('hidden');
-    if (!okIdHp(d.idhp)) return U.fieldErr(form, 'idhp', 'Isi ID Peserta (MTI-2026-001) atau nomor HP yang valid.');
+    if (!okIdHp(d.idhp)) return U.fieldErr(form, 'idhp', 'Isi ID Peserta (MTI26001) atau nomor HP yang valid.');
     U.busy(btn, true, 'Memeriksa…');
     api('verifikasi', { idhp: d.idhp.trim() }, { role: 'peserta', noToken: true }).then(function (r) {
       U.busy(btn, false);

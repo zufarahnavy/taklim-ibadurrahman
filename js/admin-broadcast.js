@@ -36,7 +36,7 @@
 
     function fill(text, p) {
       var k = st.tpl === 'reminder' || /\{(kegiatan|tanggal|jam|lokasi)\}/.test(text) ? kg() : {};
-      var m = { nama: p ? p.Nama : 'Bapak/Ibu', id: p ? (p.Kode || '-') : 'MTI-2026-001', kegiatan: k.Judul || '(pilih kegiatan)', tanggal: k.Tanggal ? (U.fmtTglPanjang ? U.fmtTglPanjang(k.Tanggal) : U.fmtTgl(k.Tanggal)) : '-', jam: k.Jam || '-', lokasi: k.Lokasi || '-' };
+      var m = { nama: p ? p.Nama : 'Bapak/Ibu', id: p ? (p.Kode || '-') : 'MTI26001', kegiatan: k.Judul || '(pilih kegiatan)', tanggal: k.Tanggal ? (U.fmtTglPanjang ? U.fmtTglPanjang(k.Tanggal) : U.fmtTgl(k.Tanggal)) : '-', jam: k.Jam || '-', lokasi: k.Lokasi || '-' };
       return text.replace(/\{(\w+)\}/g, function (a, v) { return m[v] != null ? m[v] : a; });
     }
     function link(p) { return 'https://wa.me/' + U.normHp(p.No_HP) + '?text=' + encodeURIComponent(fill(st.text, p)); }

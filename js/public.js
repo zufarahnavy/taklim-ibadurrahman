@@ -437,7 +437,7 @@
   function loadAdmin() {
     if (window.Admin) return window.Admin.mount($('#admin-root'));
     if (!adminLoading) adminLoading = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/admin.js?v=4'; var to = setTimeout(function () { adminLoading = null; if (s.parentNode) s.parentNode.removeChild(s); rej(); }, 15000); s.onload = function () { clearTimeout(to); res(); }; s.onerror = function () { clearTimeout(to); adminLoading = null; if (s.parentNode) s.parentNode.removeChild(s); rej(); }; document.head.appendChild(s);
+      var s = document.createElement('script'); s.src = 'js/admin.js?v=5'; var to = setTimeout(function () { adminLoading = null; if (s.parentNode) s.parentNode.removeChild(s); rej(); }, 15000); s.onload = function () { clearTimeout(to); res(); }; s.onerror = function () { clearTimeout(to); adminLoading = null; if (s.parentNode) s.parentNode.removeChild(s); rej(); }; document.head.appendChild(s);
     });
     $('#admin-root').innerHTML = '<div class="min-h-dvh flex items-center justify-center"><div class="skeleton w-64 h-40"></div></div>';
     adminLoading.then(function () { window.Admin.mount($('#admin-root')); }).catch(function () { $('#admin-root').innerHTML = '<div class="min-h-dvh flex items-center justify-center p-6"><div class="card p-8 text-center max-w-md"><h2 class="font-display text-xl font-semibold">Panel belum bisa dimuat</h2><p class="text-muted mt-2">Koneksi sedang lambat atau terputus.</p><button class="btn btn-primary mt-5" id="adm-retry">Muat ulang</button></div></div>'; var rb = $('#adm-retry'); if (rb) rb.addEventListener('click', loadAdmin); });
@@ -457,7 +457,7 @@
     App.loadBoot().then(function () {
       U.idle(function () {                                    // prefetch pintar: halaman yang kemungkinan dibuka berikutnya
         if (Session.get('peserta') && App.prefetchDash) App.prefetchDash();
-        if (Session.get('admin')) { var s = document.createElement('script'); s.src = 'js/admin.js?v=4'; s.defer = true; document.head.appendChild(s); }
+        if (Session.get('admin')) { var s = document.createElement('script'); s.src = 'js/admin.js?v=5'; s.defer = true; document.head.appendChild(s); }
       });
     });
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') App.loadBoot(); });   // segar saat kembali ke tab

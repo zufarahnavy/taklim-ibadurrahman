@@ -25,7 +25,7 @@
   var TITLES = {}; NAV.forEach(function (n) { TITLES[n.k] = n.l; });
 
   // ---------- Muat modul lanjutan ----------
-  var extraP = null, EXTRA = ['js/admin-lanjut.js', 'js/admin-media.js', 'js/admin-broadcast.js'], EXTRA_V = '?v=4';
+  var extraP = null, EXTRA = ['js/admin-lanjut.js', 'js/admin-media.js', 'js/admin-broadcast.js'], EXTRA_V = '?v=5';
   /** Muat satu skrip dengan batas waktu; skrip gagal dibuang agar percobaan ulang tidak menumpuk tag. */
   function loadScript(src, ms) {
     return new Promise(function (res, rej) {
@@ -265,9 +265,20 @@
     if (h) { h.checked = all.length > 0 && on === all.length; h.indeterminate = on > 0 && on < all.length; }
     all.forEach(function (c) { var tr = c.closest('tr'); if (tr) tr.style.background = c.checked ? 'rgb(var(--c-goldpale) / .45)' : ''; });
   }
+  /** Pencarian peserta: tiap kata harus cocok di nama / ID / alamat / JK; angka dicocokkan juga ke No. HP (0812… = 62812…, spasi & strip diabaikan). */
+  function pesFilter(rows, q) {
+    q = String(q || '').toLowerCase().trim(); if (!q) return rows;
+    var tokens = q.split(/\s+/).filter(String), digits = q.replace(/\D/g, '');
+    var hpq = digits.length >= 3 ? digits.replace(/^(0|62)/, '') : '';
+    return rows.filter(function (p) {
+      var hp = String(p.No_HP || '').replace(/\D/g, ''), hay = [p.Nama, p.Kode, p.Alamat, p.No_HP, p.Jenis_Kelamin === 'Laki-laki' ? 'laki-laki pria' : p.Jenis_Kelamin === 'Perempuan' ? 'perempuan wanita' : ''].join(' ').toLowerCase(), hay2 = hay.replace(/[\s\-_.]/g, '');
+      if (hpq && hp.replace(/^(0|62)/, '').indexOf(hpq) >= 0 && tokens.length === 1) return true;
+      return tokens.every(function (t) { return hay.indexOf(t) >= 0 || hay2.indexOf(t.replace(/[\s\-_.]/g, '')) >= 0; });
+    });
+  }
   Admin.views.peserta = function (main) {
     function draw() {
-      var q = qPes.toLowerCase(), rows = list('peserta').filter(function (p) { return !q || (p.Nama + ' ' + p.No_HP + ' ' + p.Alamat + ' ' + p.Kode + ' ' + (p.Jenis_Kelamin || '')).toLowerCase().indexOf(q) >= 0; });
+      var rows = pesFilter(list('peserta'), qPes);
       var exist = {}; list('peserta').forEach(function (p) { exist[p.ID] = 1; }); Object.keys(selPes).forEach(function (k) { if (!exist[k]) delete selPes[k]; });
       main.innerHTML = pageHead('Peserta', U.num(list('peserta').length) + ' peserta terdaftar', '<button class="btn btn-gold btn-sm" data-view="migrasi">' + ic('upload', 'w-4 h-4') + ' Impor file</button><button class="btn btn-gold btn-sm" data-bulk-add>' + ic('list-plus', 'w-4 h-4') + ' Tambah banyak</button><button class="btn btn-primary btn-sm" data-add="peserta">' + ic('plus', 'w-4 h-4') + ' Tambah peserta</button>') +
         '<div class="mb-4">' + searchBox('q-pes', 'Cari nama / ID / HP / alamat…', qPes) + '</div><div id="pes-bar">' + pesBar() + '</div>' +
@@ -281,7 +292,7 @@
       syncSel();
     }
     draw();
-    if (!kodeTried && list('peserta').some(function (p) { return !p.Kode; })) { kodeTried = true; req('kodeLengkapi').then(function (r) { if (r.success && r.data.dibuat) refreshBoot(true); }); }
+    if (!kodeTried && list('peserta').some(function (p) { return !p.Kode || p.Kode.indexOf('-') >= 0; })) { kodeTried = true; req('kodeLengkapi').then(function (r) { if (r.success && r.data.dibuat) refreshBoot(true); }); }
   };
   var kodeTried = false;
   document.addEventListener('change', function (e) {
